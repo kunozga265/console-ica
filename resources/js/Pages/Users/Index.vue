@@ -317,7 +317,10 @@ const filteredUsers = computed(() => {
     /* Filter Members By Code*/
     if (search.length !== 0) {
         filtered = (filtered).filter((user) => {
-            return user.firstName.toLowerCase().includes(search.value.toLowerCase()) || user.lastName.toLowerCase().includes(search.value.toLowerCase())
+            if(user.lastName != null){
+                return user.firstName.toLowerCase().includes(search.value.toLowerCase()) || user.lastName.toLowerCase().includes(search.value.toLowerCase()) || user.email.toLowerCase().includes(search.value.toLowerCase())
+            }
+            return user.firstName.toLowerCase().includes(search.value.toLowerCase()) || user.email.toLowerCase().includes(search.value.toLowerCase())
         })
     }
 
