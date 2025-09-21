@@ -1,7 +1,10 @@
 <?php
 
 use App\Http\Controllers\AppController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\MemberController;
 use App\Http\Controllers\RegisterController;
+use App\Http\Controllers\UserController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -16,14 +19,9 @@ use Laravel\Socialite\Facades\Socialite;
 //    ]);
 //});
 
-Route::get('/auth/redirect', function () {
-    return Socialite::driver('google')->redirect();
-})->name('auth.google');
+Route::get('/auth/{provider}/redirect', [AuthController::class,"redirect"])->name('auth.provider');
 
-Route::get('/callback', function () {
-    $user = Socialite::driver('google')->user();
-    dd($user);
-});
+Route::get('/auth/{provider}/callback', [AuthController::class,"callback"]);
 
 Route::middleware([
     'auth:sanctum',
@@ -38,6 +36,17 @@ Route::middleware([
         Route::get('/show/{code}', [RegisterController::class,"show"])->name('registers.show');
         Route::post('/', [RegisterController::class,"store"])->name('registers.store');
         Route::post('/record-attendance', [RegisterController::class,"recordAttendance"])->name('registers.record-attendance');
+    });
+
+    Route::group(["prefix"=>"users"],function (){
+        Route::get('/', [UserController::class,"index"])->name('users.index');
+        Route::post('/change-role', [UserController::class,"changeAdminRole"])->name('users.change-role');
+    });
+
+    Route::group(["prefix"=>"members"],function (){
+        // Route::get('/show/{code}', [RegisterController::class,"show"])->name('registers.show');
+        Route::post('/register', [MemberController::class,"store"])->name(name: 'members.store');
+        // Route::post('/record-attendance', [RegisterController::class,"recordAttendance"])->name('registers.record-attendance');
     });
 
 });

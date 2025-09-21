@@ -32,7 +32,7 @@ const googleLogin = () => {
     form.transform(data => ({
         ...data,
      
-    })).get(route('auth.google'), {
+    })).get(route('auth.provider',{provider:"google"}), {
         // onFinish: () => form.reset('password'),
     });
 };

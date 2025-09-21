@@ -5,97 +5,91 @@
 
         </template>
         <template #actions>
-            <!-- Modal toggle -->
+
             <div class="flex justify-center">
-                <button data-modal-target="crud-modal" data-modal-toggle="crud-modal"
-                    class="block text-white bg_green_500 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+                <button @click="registerDialog = true"
+                    class="block text-white bg_green_500 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center   "
                     type="button">
                     New Register +
                 </button>
             </div>
 
-
-            <!-- Main modal -->
-            <div id="crud-modal" tabindex="-1" aria-hidden="true"
-                class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
-                <div class="relative p-4 w-full max-w-md max-h-full">
-                    <!-- Modal content -->
-                    <div class="relative bg-white rounded-lg shadow-sm dark:bg-gray-700">
-                        <!-- Modal header -->
-                        <div
-                            class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600 border-gray-200">
-                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                                Create New Register
-                            </h3>
-                            <button type="button"
-                                class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
-                                data-modal-toggle="crud-modal">
-                                <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none"
-                                    viewBox="0 0 14 14">
-                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                                        stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
-                                </svg>
-                                <span class="sr-only">Close modal</span>
-                            </button>
-                        </div>
-                        <!-- Modal body -->
-                        <form class="p-4 md:p-5">
-                            <div class="">
-
-                                <div class="mb-4">
-                                    <label for="category"
-                                        class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                                        Service Name
-                                    </label>
-                                    <TextInput id="name" ref="textInput" v-model="form.name" type="text"
-                                        class="mt-1 block w-full" autocomplete="new-service-name" />
-                                    <InputError :message="form.errors.name" class="mt-2" />
-                                </div>
-                                <div class="mb-4">
-                                    <label for="category"
-                                        class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Register
-                                        is Under?</label>
-                                    <select v-model="form.ministryId" id="category"
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
-                                        <!--                                            <option selected="">Select ministry</option>-->
-                                        <option v-for="(ministry, index) in ministries" :key="index"
-                                            :value="ministry.id">{{ ministry.name }}
-                                        </option>
-                                    </select>
-                                </div>
-                                <div class="mb-4">
-                                    <label for="date"
-                                        class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Service
-                                        Date</label>
-                                    <div class="relative max-w-sm">
-                                        <!--                                            <div class="absolute inset-y-0 start-0 flex items-center ps-3.5 pointer-events-none">-->
-                                        <!--                                                <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">-->
-                                        <!--                                                    <path d="M20 4a2 2 0 0 0-2-2h-2V1a1 1 0 0 0-2 0v1h-3V1a1 1 0 0 0-2 0v1H6V1a1 1 0 0 0-2 0v1H2a2 2 0 0 0-2 2v2h20V4ZM0 18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8H0v10Zm5-8h10a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2Z"/>-->
-                                        <!--                                                </svg>-->
-                                        <!--                                            </div>-->
-                                        <input v-model="form.date" type="date"
-                                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                            placeholder="Select date" required>
-                                        <!--                                            <input @changedate="console.log('1')" v-model="date" datepicker id="default-datepicker" type="text" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Select date">-->
-                                    </div>
-                                </div>
+            <DialogModal :show="registerDialog" @close="registerDialog = false">
+                <template #title @close="newMemberDialog = false">
+                    Create New Register
+                </template>
 
 
+                <template #content>
+                    <form class="p-4 md:p-5">
+                        <div class="">
+
+                            <div class="mb-4">
+                                <label for="category"
+                                    class="block mb-2 text-sm font-medium text-gray-900 ">
+                                    Service Name
+                                </label>
+                                <TextInput id="name" ref="textInput" v-model="form.name" type="text"
+                                    class="mt-1 block w-full" autocomplete="new-service-name" />
+                                <InputError :message="form.errors.name" class="mt-2" />
                             </div>
-                            <button @click="submit" type="submit"
-                                class="text-white inline-flex items-center bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
-                                <svg class="me-1 -ms-1 w-5 h-5" fill="currentColor" viewBox="0 0 20 20"
-                                    xmlns="http://www.w3.org/2000/svg">
-                                    <path fill-rule="evenodd"
-                                        d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
-                                        clip-rule="evenodd"></path>
-                                </svg>
-                                Add new register
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
+                            <div class="mb-4">
+                                <label for="category"
+                                    class="block mb-2 text-sm font-medium text-gray-900 ">Register
+                                    is Under?</label>
+                                <select v-model="form.ministryId" id="category"
+                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5  ">
+                                    <!--                                            <option selected="">Select ministry</option>-->
+                                    <option v-for="(ministry, index) in ministries" :key="index" :value="ministry.id">{{
+                                        ministry.name }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="mb-4">
+                                <label for="date"
+                                    class="block mb-2 text-sm font-medium text-gray-900 ">Service
+                                    Date</label>
+                                <div class="relative">
+
+                                    <input v-model="form.date" type="date"
+                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5"
+                                        placeholder="Select date" required>
+                                    <!--                                            <input @changedate="console.log('1')" v-model="date" datepicker id="default-datepicker" type="text" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5      " placeholder="Select date">-->
+                                </div>
+                            </div>
+
+
+                        </div>
+
+                    </form>
+                </template>
+
+                <template #footer>
+                    <!-- <SecondaryButton @click="registerDialog = false">
+                        Cancel
+                    </SecondaryButton> -->
+
+                    <!-- <PrimaryButton class="ms-3" :class="{ 'opacity-25': form.processing }" :disabled="form.processing"
+                        @click="deleteUser">
+                        Delete Account
+                    </PrimaryButton> -->
+                    <button @click="submit" type="button"
+                        class="text-white inline-flex items-center bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center   ">
+                        <svg class="me-1 -ms-1 w-5 h-5" fill="currentColor" viewBox="0 0 20 20"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd"
+                                d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                                clip-rule="evenodd"></path>
+                        </svg>
+                        Add new register
+                    </button>
+                </template>
+            </DialogModal>
+
+
+
+
+
         </template>
 
         <div class="px-6 sm:p-8 md:px-10 lg:px-12">
@@ -181,9 +175,9 @@
                         </span>
                     </div>
                     <div class="relative overflow-x-auto shadow-md sm:rounded-lg border border-blue-100">
-                        <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+                        <table class="w-full text-sm text-left rtl:text-right text-gray-500 ">
                             <thead
-                                class="text-xs text-gray-700 uppercase bg-blue-100 dark:bg-gray-700 dark:text-gray-400">
+                                class="text-xs text-gray-700 uppercase bg-blue-100  ">
                                 <tr>
                                     <th scope="col" class="px-6 py-3">
                                         Date
@@ -209,12 +203,12 @@
                             <tbody>
                                 <tr @click="navigateToRegister(register.code)"
                                     v-for="(register, index) in registersCompound.all" :key="index"
-                                    class="bg-white hover:bg-blue-50 cursor-pointer border-b dark:bg-gray-800 dark:border-gray-700 border-blue-100">
+                                    class="bg-white hover:bg-blue-50 cursor-pointer border-b   border-blue-100">
                                     <td class="px-6 py-4">
                                         {{ useDate(register.date) }}
                                     </td>
                                     <th scope="row"
-                                        class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                        class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
                                         {{ register.name }}
                                     </th>
                                     <td class="px-6 py-4">
@@ -250,7 +244,9 @@
 
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
-import Welcome from '@/Components/Welcome.vue';
+import DialogModal from '@/Components/DialogModal.vue';
+import SecondaryButton from '@/Components/SecondaryButton.vue';
+import PrimaryButton from '@/Components/PrimaryButton.vue';
 
 import { computed, ref } from 'vue';
 import { useForm, Link, router } from "@inertiajs/vue3";
@@ -272,6 +268,7 @@ const props = defineProps({
 
 // const selectedMinistry = ref(1);
 // const date = ref(null);
+const registerDialog = ref(false);
 
 const form = useForm({
     name: "",
@@ -371,7 +368,10 @@ const submit = () => {
         .post(route('registers.store'), {
             errorBag: 'register',
             preserveScroll: true,
-            onSuccess: () => form.reset(),
+            onSuccess: () => {
+                form.reset()
+                registerDialog.value = false
+            },
             onError: () => {
                 if (form.errors.ministry_id) {
                     // form.reset('password', 'password_confirmation');
@@ -413,4 +413,13 @@ const registersCompound = computed(() => {
         "all": all,
     }
 })
+
+const googleLogin = () => {
+    form.transform(data => ({
+        ...data,
+
+    })).get(route('auth.google'), {
+        // onFinish: () => form.reset('password'),
+    });
+};
 </script>

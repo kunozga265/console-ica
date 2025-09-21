@@ -1,6 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@custom-variant dark (&:where(.dark, .dark *));
 
 /* @import "tailwindcss"; */
 
@@ -146,3 +147,18 @@ button.bg_green_500:hover{
 .bg_green_600{
     background-color: #3e9a9a;
 }
+
+
+/* Phone Numbers Input Style */
+.input-suffix{
+  position: absolute;
+  left: 12px;
+  top:10.4px;
+  font-size: 14px;
+}
+
+.bg-background{
+  background-color:white
+
+}
+

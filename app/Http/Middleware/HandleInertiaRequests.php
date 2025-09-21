@@ -44,6 +44,9 @@ class HandleInertiaRequests extends Middleware
                     'error'     =>$request->session()->get('error'),
                 ];
             },
+             'publicPath'=> function() use ($request){
+                return env("APP_URL");
+            },
         ]);
     }
 }

@@ -1,8 +1,16 @@
 // composables.js
 import { ref, onMounted, onUnmounted } from 'vue'
 
+export function fileUrl(publicPath, path) {
+    return publicPath + path
+}
+
+export function getTimestampFromDate(date) {
+    return new Date(date).getTime() / 1000
+}
+
 // by convention, composable function names start with "use"
- export function useDate(timestamp, time = false) {
+export function useDate(timestamp, time = false) {
     let date = new Date(timestamp * 1000);
     const month = date.getMonth() + 1
     let monthName = ""
