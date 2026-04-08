@@ -19,6 +19,10 @@ class Member extends Model
     {
         return $this->hasOne(User::class);
     }
+    public function users()
+    {
+        return $this->hasMany(User::class);
+    }
 
     public function fullName()
     {
@@ -30,9 +34,19 @@ class Member extends Model
         return $this->belongsTo(Cell::class);
     }
 
+    public function isAdmin()
+    {
+        foreach($this->users as $user){
+            if($user->hasRole('super')){
+                return true;
+            }
+        }
+        return false;
+    }
+
     public function leadershipCell()
     {
-        return $this->hasOne(Cell::class,"leader_id","id");
+        return $this->hasOne(Cell::class,"id","leader_cell_id");
     }
 
     public function attendances()
@@ -62,11 +76,13 @@ class Member extends Model
         "last_name",
         "gender",
         "cell_id",
+        "leader_cell_id",
         "date_of_birth",
         "phone_number_airtel",
         "phone_number_tnm",
         "phone_number_international",
         "email",
+        "associated",
     ];
 
 }

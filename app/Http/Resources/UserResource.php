@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources;
 
-use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class UserResource extends JsonResource
@@ -10,21 +9,22 @@ class UserResource extends JsonResource
     /**
      * Transform the resource into an array.
      *
-     * @return array<string, mixed>
+     * @param  \Illuminate\Http\Request  $request
+     * @return array|\Illuminate\Contracts\Support\Arrayable|\JsonSerializable
      */
-    public function toArray(Request $request): array
+    public function toArray($request)
     {
         return [
             'id' => intval($this->id),
             'avatar' => $this->avatar,
-            'firstName' => $this->first_name,
-            'middleName' => $this->middle_name,
-            'otherName' => $this->other_name,
-            'lastName' => $this->last_name,
+            'first_name' => $this->first_name,
+            'middle_name' => $this->middle_name,
+            'other_name' => $this->other_name,
+            'last_name' => $this->last_name,
             'email' => $this->email,
             'role' => $this->roles()->first(),
-            'cell_code' => $this->cell?->code,
-            'isAdmin' => $this->hasRole('admin')
+            'cell_code' => $this->member?->leadershipCell?->code,
+            'member_cell_code' => $this->member?->cell?->code
         ];
     }
 }

@@ -15,7 +15,7 @@ class User extends Authenticatable
 
     public function roles()
     {
-        return $this->belongsToMany(Role::class,'user_role','user_id','role_id');
+        return $this->belongsToMany(Role::class, 'user_role', 'user_id', 'role_id');
     }
 
     public function member()
@@ -46,16 +46,21 @@ class User extends Authenticatable
         return $this->hasMany(Note::class);
     }
 
-       public function hasAnyRole($roles)
+    public function usages()
     {
-        if(is_array($roles)){
-            foreach ($roles as $role){
-                if($this->hasRole($role)){
+        return $this->belongsToMany(Usage::class, 'usage_user', 'user_id', 'usage_id');
+    }
+
+    public function hasAnyRole($roles)
+    {
+        if (is_array($roles)) {
+            foreach ($roles as $role) {
+                if ($this->hasRole($role)) {
                     return true;
                 }
             }
-        }else{
-            if($this->hasRole($roles)){
+        } else {
+            if ($this->hasRole($roles)) {
                 return true;
             }
         }
@@ -64,11 +69,12 @@ class User extends Authenticatable
 
     public function hasRole($role)
     {
-        if($this->roles()->where('name',$role)->first()){
+        if ($this->roles()->where('name', $role)->first()) {
             return true;
         }
         return false;
     }
+
 
 
     /**
@@ -85,6 +91,10 @@ class User extends Authenticatable
         "member_id",
         'email',
         'password',
+        'phone_number_airtel',
+        'phone_number_tnm',
+        'phone_number_international',
+        'trigger',
     ];
 
     /**

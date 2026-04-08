@@ -21,7 +21,7 @@ class RegisterController extends Controller
 
         if (is_object($register)) {
             $members = Member::orderBy("last_name")->get();
-            $attendances = $register->members;
+            $attendances = $register->members();
             $teen_members = $register->ministry->members;
             $cells = Cell::orderBy("name", "asc")->get();
 

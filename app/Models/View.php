@@ -11,10 +11,11 @@ class View extends Model
 
     public function sermon()
     {
-        return $this->hasOne("App\Models\Sermon","id","sermon_id");
+        return $this->hasOne(Sermon::class,"id","sermon_id");
     }
 
     protected $fillable=[
+        "user_id",
         "sermon_id",
         "count"
     ];

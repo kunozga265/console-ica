@@ -155,7 +155,7 @@
                                                 <img class="h-7 rounded" :src="fileUrl(publicPath, 'images/int.png')"
                                                     alt="">
                                             </div>
-                                            <input type="text" id="phone-input" 
+                                            <input type="text" id="phone-input"
                                                 class="block pl-5 p-2.5 w-full z-20 text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
                                                 placeholder="" v-model="form.phoneNumberInternational" />
 
@@ -447,7 +447,7 @@
                                         </td>
 
                                         <td class="px-6 py-4">
-                                            {{ member.cell != null ? member.cell.name : "-" }}
+                                            {{ getCellName(member) }}
                                         </td>
 
                                         <td class="px-6 py-4">
@@ -608,19 +608,19 @@ const newMember = () => {
 
         errorMessage.value = "";
         phoneValidation.value = true
-        if(tnm){
+        if (tnm) {
             errorMessage.value = "TNM number already exists"
             phoneValidation.value = false
             return 0
         }
-        
-        if(airtel){
+
+        if (airtel) {
             errorMessage.value = "Airtel number already exists"
             phoneValidation.value = false
             return 0
         }
-        
-        if(international){
+
+        if (international) {
             errorMessage.value = "International number already exists"
             phoneValidation.value = false
             return 0
@@ -666,6 +666,19 @@ const checkAttendance = (member) => {
     return attendee != null
 
 };
+const getCellName = (member) => {
+
+    if (member.cell != null && member.leadershipCell != null) {
+        return `${member.leadershipCell?.name} (${member.cell?.name})`
+    } else if (member.cell != null) {
+        return `${member.cell.name}`
+    } else if (member.leadershipCell != null) {
+        return `${member.leadershipCell?.name}`
+    } else {
+        return "-"
+    }
+
+};
 
 
 const newMemberValidation = computed(() => {
@@ -698,16 +711,17 @@ const filteredMembers = computed(() => {
     let filtered = []
     if (active.value) {
         filtered = props.members.data
-
-        /* Filter Members By Code*/
-        if (search.length !== 0) {
-            filtered = (filtered).filter((member) => {
-                return member.firstName.toLowerCase().includes(search.value.toLowerCase()) || member.lastName.toLowerCase().includes(search.value.toLowerCase())
-            })
-        }
     } else {
         filtered = props.register.data.attendees
     }
+
+    /* Filter Members By Code*/
+    if (search.length !== 0) {
+        filtered = (filtered).filter((member) => {
+            return member.firstName.toLowerCase().includes(search.value.toLowerCase()) || member.lastName.toLowerCase().includes(search.value.toLowerCase())
+        })
+    }
+
 
     return filtered
 })
@@ -731,13 +745,13 @@ const metrics = computed(() => {
 
 const checkPhoneNumber = (key, value) => {
     if (value != null && value.length > 0) {
-        const exists = props.members.data.some(item => item[key] === value.replace(" ",""));
+        const exists = props.members.data.some(item => item[key] === value.replace(" ", ""));
 
         console.log(key);
-        console.log(value.toString().replace(" ",""));
+        console.log(value.toString().replace(" ", ""));
         console.log(exists);
         return exists
-    }else{
+    } else {
         return false
     }
 }

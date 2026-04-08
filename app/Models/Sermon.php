@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Http\Controllers\Web\AppController;
+use App\Http\Controllers\HelperController;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -11,7 +11,7 @@ use Laravel\Scout\Searchable;
 class Sermon extends Model
 {
     use HasFactory;
-    use Searchable;
+    // use Searchable;
     use SoftDeletes;
 
     public function author()
@@ -43,7 +43,7 @@ class Sermon extends Model
 
     public function refactorBody()
     {
-        return (new AppController())->generateHighlightLinks($this->body);
+        return (new HelperController())->generateHighlightLinks($this->body);
     }
 
     protected $fillable=[

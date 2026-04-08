@@ -22,6 +22,7 @@ use Laravel\Socialite\Facades\Socialite;
 Route::get('/auth/{provider}/redirect', [AuthController::class,"redirect"])->name('auth.provider');
 
 Route::get('/auth/{provider}/callback', [AuthController::class,"callback"]);
+Route::get('/', [AppController::class,"home"])->name('home');
 
 Route::middleware([
     'auth:sanctum',
@@ -29,7 +30,7 @@ Route::middleware([
     'verified',
 ])->group(function () {
 
-    Route::get('/', [AppController::class,"dashboard"])->name('dashboard');
+    Route::get('/dashboard', [AppController::class,"dashboard"])->name('dashboard');
 
 
     Route::group(["prefix"=>"registers"],function (){

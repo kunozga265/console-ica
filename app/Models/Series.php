@@ -10,7 +10,7 @@ use Laravel\Scout\Searchable;
 class Series extends Model
 {
     use HasFactory;
-    use Searchable;
+    // use Searchable;
     use SoftDeletes;
 
     public function sermons()

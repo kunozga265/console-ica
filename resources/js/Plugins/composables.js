@@ -1,8 +1,30 @@
 // composables.js
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useDateFormat, useNow } from '@vueuse/core'
 
-export function fileUrl(publicPath, path) {
-    return publicPath + path
+export function fileUrl(path) {
+    return import.meta.env.VITE_APP_URL + path
+}
+
+export function getPrayerPointDate(date) {
+    return useDateFormat(Date(date * 1000), 'dddd, MMMM DD')
+}
+
+export function getDay(date) {
+    return useDateFormat(date * 1000, 'D')
+}
+
+export function getMonth(date) {
+    return useDateFormat(date * 1000, 'MMM')
+}
+export function getYear(date) {
+    return useDateFormat(date * 1000, 'YYYY')
+}
+export function getDuration(start, end) {
+    if(end != null){
+
+        return useDateFormat(date * 1000, 'YYYY')
+    }
 }
 
 export function getTimestampFromDate(date) {
@@ -136,4 +158,26 @@ export function useDate(timestamp, time = false) {
     else
         return date.getDate() + " " + monthName + ", " + date.getFullYear()
 
+}
+
+
+export function formatList(items, key = 'name') {
+    // 1. Safety check
+    if (!items || items.length === 0) return ''
+
+    // 2. Extract the specific text values into a simple array of strings
+    // We use 'item[key]' to dynamically grab 'name', 'description', etc.
+    const labels = items.map(item => item[key] || item['description'] || '')
+
+    // 3. Handle single item
+    if (labels.length === 1) {
+        return labels[0]
+    }
+
+    // 4. Handle multiple items
+    // Remove the last item from the array
+    const lastItem = labels.pop()
+
+    // Join the remaining items with ", " and add the last one with " & "
+    return labels.join(', ') + ' & ' + lastItem
 }

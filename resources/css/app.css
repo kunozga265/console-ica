@@ -8,8 +8,51 @@
 /* @source "../node_modules/flowbite-datepicker"; */
 
 [x-cloak] {
-    display: none;
+  display: none;
 }
+
+.playfair-display-thin {
+  font-family: "Playfair Display", serif;
+  font-optical-sizing: auto;
+  font-weight: 100;
+  font-style: normal;
+}
+
+.playfair-display-regular {
+  font-family: "Playfair Display", serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.playfair-display-bold {
+  font-family: "Playfair Display", serif;
+  font-optical-sizing: auto;
+  font-weight: 700;
+  font-style: normal;
+}
+
+.inter-regular {
+  font-family: "Inter", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.inter-medium {
+  font-family: "Inter", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 500;
+  font-style: normal;
+}
+
+.inter-bold {
+  font-family: "Inter", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 700;
+  font-style: normal;
+}
+
 
 .poppins-thin {
   font-family: "Poppins", sans-serif;
@@ -119,46 +162,147 @@
   font-style: italic;
 }
 
-.blue-card{
-    background-color: #e2f6ff;
-    /* border: 1px solid #a0a0a0; */
-
-}
-.yellow-card{
-    background-color: #fff8e2;
+.blue-card {
+  background-color: #e2f6ff;
+  /* border: 1px solid #a0a0a0; */
 
 }
 
-.bg_blue_500{
-    background-color: #148ddd;
+.yellow-card {
+  background-color: #fff8e2;
+
 }
 
-.bg_green_500{
-    background-color: #4ec3c3;
-}
-.bg_yellow_500{
-    background-color: #ffe346;
+.bg_blue_500 {
+  background-color: #148ddd;
 }
 
-button.bg_green_500:hover{
-    background-color: #3e9a9a;
+.bg_green_500 {
+  background-color: #4ec3c3;
 }
 
-.bg_green_600{
-    background-color: #3e9a9a;
+.bg_yellow_500 {
+  background-color: #ffe346;
+}
+
+button.bg_green_500:hover {
+  background-color: #3e9a9a;
+}
+
+.bg_green_600 {
+  background-color: #3e9a9a;
 }
 
 
 /* Phone Numbers Input Style */
-.input-suffix{
+.input-suffix {
   position: absolute;
   left: 12px;
-  top:10.4px;
+  top: 10.4px;
   font-size: 14px;
 }
 
-.bg-background{
-  background-color:white
+.bg-background {
+  background-color: white
+}
+
+.nav-header .brand-logo .title {
+  color: black;
 
 }
 
+.nav-header .brand-logo {
+  color: var(--bs-card-color);
+}
+
+/* [data-sidebar-style="mini"] .brand-title
+       {
+  display: none; } */
+
+.nav-header .brand-title {
+  margin-left: 0px;
+  max-width: 150px;
+  margin-top: 0px;
+}
+
+.text-xxs {
+  font-size: 0.7rem;
+  line-height: 1rem;
+}
+
+.light.btn-primary {
+  background-color: var(--bs-primary-bg-subtle);
+  border-color: var(--bs-primary-bg-subtle);
+  color: var(--bs-primary);
+}
+
+.deznav .metismenu>li>a {
+  display: flex;
+  align-items: center;
+}
+
+.deznav .metismenu a {
+  display: flex;
+  align-items: center;
+}
+
+.deznav .metismenu>li>a svg {
+  max-width: 24px;
+  max-height: 24px;
+  height: 100%;
+  margin-right: 5px;
+  margin-top: -3px;
+  /* color: var(--bs-primary); */
+  color: #7e7e7e;
+}
+
+[data-sidebar-style="full"][data-layout="vertical"] .deznav .metismenu>li.mm-active>a svg {
+  color: var(--bs-primary);
+}
+
+.body-html p,
+ul {
+  margin-bottom: 16px;
+
+}
+
+.body-html.short {
+  max-height: 300px;
+  /* padding-bottom: 16px; */
+  overflow: hidden;
+  font-size: 14px;
+}
+
+.fade-bottom {
+  /* For browser compatibility */
+  -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+}
+
+.sermon-card {
+  width: 250px;
+
+}
+
+.carousel__slide {
+  align-items: start;
+  border-right: 1px solid #EEEEEE;
+}
+
+.text-muted {
+  color: var(--bs-card-color);
+}
+
+[data-sidebar-style="full"][data-layout="vertical"] .menu-toggle .deznav .metismenu>li.mm-active>a svg,
+[data-sidebar-style="mini"] .deznav .metismenu>li.mm-active>a svg {
+  color: white;
+}
+
+.secondary-container {
+  background-color: #fff8e2;
+}
+
+.tertiary-container {
+  background-color: black;
+  color: white;
+}
