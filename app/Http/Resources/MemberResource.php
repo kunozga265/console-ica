@@ -38,7 +38,7 @@ class MemberResource extends JsonResource
             "email" => $this->email,
             "gender" => $this->gender,
             "date_of_birth" => $this->date_of_birth != null ? intval($this->date_of_birth) : null,
-            "nextBirthday" => $nextBirthday,
+            "nextBirthday" => $this->next_birthday,
             "cell" => $this->cell?->name,
             "phone_number_airtel" => $this->phone_number_airtel,
             "phone_number_tnm" => $this->phone_number_tnm,

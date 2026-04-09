@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -36,8 +37,8 @@ class Member extends Model
 
     public function isAdmin()
     {
-        foreach($this->users as $user){
-            if($user->hasRole('super')){
+        foreach ($this->users as $user) {
+            if ($user->hasRole('super')) {
                 return true;
             }
         }
@@ -46,7 +47,7 @@ class Member extends Model
 
     public function leadershipCell()
     {
-        return $this->hasOne(Cell::class,"id","leader_cell_id");
+        return $this->hasOne(Cell::class, "id", "leader_cell_id");
     }
 
     public function attendances()
@@ -56,16 +57,30 @@ class Member extends Model
 
     public function registers()
     {
-        return $this->belongsToMany(Role::class,'member_register','member_id','register_id');
+        return $this->belongsToMany(Role::class, 'member_register', 'member_id', 'register_id');
     }
 
     public function attendanceCount()
     {
-        if($this->attendances()->count() == 1){
-            return $this->attendances()->count() ." Meeting";
-        }else{
-            return $this->attendances()->count() ." Meetings";
+        if ($this->attendances()->count() == 1) {
+            return $this->attendances()->count() . " Meeting";
+        } else {
+            return $this->attendances()->count() . " Meetings";
         }
+    }
+
+    public function getNextBirthdayAttribute()
+    {
+        $birthday = Carbon::createFromTimestamp($this->date_of_birth);
+        $now = Carbon::now();
+
+        $next = $birthday->copy()->year($now->year);
+
+        if ($next->isPast()) {
+            $next->addYear();
+        }
+
+        return $next->timestamp;
     }
 
     protected $fillable = [
@@ -84,5 +99,4 @@ class Member extends Model
         "email",
         "associated",
     ];
-
 }

@@ -65,13 +65,13 @@ class AppController extends Controller
 
         //get prayer points
         $now = Carbon::now()->getTimestamp();
-        $today = Carbon::today()->getTimestamp();
+        $today = Carbon::today();
         $tomorrow = Carbon::tomorrow()->getTimestamp();
 
         $sermons = Sermon::where('published_at', '<=', $now)->orderByRaw('published_at DESC, created_at DESC')->limit((new AppController())->paginate)->get();
         // orderBy('published_at', 'desc')->orderBy("created_at", "desc")->limit((new AppController())->paginate)->get();
         // $prayers = Prayer::where('date', '<=', $now)->orderByRaw('date DESC, created_at DESC')->orderBy('created_at', 'desc')->limit((new AppController())->paginate)->get();
-        $prayer_points = Prayer::where('date', '>=', $today)->where('date', '<', $tomorrow)->first();
+        $prayer_points = Prayer::where('date', '>=', $today->getTimestamp())->where('date', '<', $tomorrow)->first();
         // $series = Series::orderBy("first_sermon_date", "desc")->limit((new AppController())->paginate)->get();
         $events = Event::where('end_date', '>=', $now)->orderBy("start_date", "asc")->limit((new AppController())->paginate)->get();
         // $authors = Author::orderBy('name', 'asc')->get();
@@ -79,10 +79,10 @@ class AppController extends Controller
         // $announcements = Page::where("name", "announcements")->first();
         // $fundraising = Page::where("name", "fundraising")->first();
 
-        $registers = Register::where('date', '>=', Carbon::today()->getTimestamp())->orderBy('date', 'asc')->paginate((new AppController())->paginate);
+        $registers = Register::where('date', '>=', $today->getTimestamp())->orderBy('date', 'asc')->paginate((new AppController())->paginate);
         $birthdays = Member::whereRaw(
             'MONTH(FROM_UNIXTIME(date_of_birth)) = ? AND DAY(FROM_UNIXTIME(date_of_birth)) = ?',
-            [now()->month, now()->day]
+            [$today->month, $today->day]
         )->get();
 
         //get new user profile information
