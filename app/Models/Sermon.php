@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Http\Controllers\HelperController;
+use App\Http\Controllers\Web\HelperController;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -19,6 +19,11 @@ class Sermon extends Model
         return $this->belongsTo("App\Models\Author");
     }
 
+    public function ministry()
+    {
+        return $this->belongsTo(Ministry::class);
+    }
+
     public function authorName()
     {
         return $this->author->suffix. " " . $this->author->name;
@@ -33,8 +38,29 @@ class Sermon extends Model
         return $this->belongsTo("App\Models\Category");
     }
 
+    /** View counters (views.sermon_id → sermons.id); one row per user/device. */
+    public function viewRecords()
+    {
+        return $this->hasMany(View::class);
+    }
+
     public function views(){
         return $this->belongsTo("App\Models\View","sermon_id");
+    }
+
+    public function highlights()
+    {
+        return $this->hasMany(Highlight::class);
+    }
+
+    public function bookmarks()
+    {
+        return $this->hasMany(Bookmark::class);
+    }
+
+    public function notes()
+    {
+        return $this->hasMany(Note::class);
     }
 
     public function searchableAs(){
@@ -56,5 +82,6 @@ class Sermon extends Model
         "video_url",
         "category_id",
         "published_at",
+        "ministry_id",
     ];
 }

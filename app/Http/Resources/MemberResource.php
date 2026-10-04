@@ -15,17 +15,6 @@ class MemberResource extends JsonResource
      */
     public function toArray($request)
     {
-        $birthday = Carbon::createFromTimestamp($this->date_of_birth);
-        $now = Carbon::now();
-
-        // Birthday in current year
-        $nextBirthday = $birthday->copy()->year($now->year);
-
-        // If already passed this year, move to next year
-        if ($nextBirthday->isPast()) {
-            $nextBirthday->addYear();
-        }
-
         return [
             "id" => intval($this->id),
             "code" => $this->code,

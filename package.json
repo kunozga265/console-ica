@@ -24,6 +24,9 @@
     },
     "dependencies": {
         "@primeuix/themes": "^1.2.3",
+        "@tiptap/extension-placeholder": "^3.27.4",
+        "@tiptap/starter-kit": "^3.27.4",
+        "@tiptap/vue-3": "^3.27.4",
         "@vueuse/core": "^14.2.1",
         "apexcharts": "^4.7.0",
         "flowbite": "^3.1.2",

@@ -11,6 +11,11 @@ class Member extends Model
 {
     use HasFactory;
 
+    public function getRouteKeyName()
+    {
+        return "code";
+    }
+
     public function ministries()
     {
         return $this->belongsToMany(Ministry::class, "member_ministry");
@@ -57,7 +62,7 @@ class Member extends Model
 
     public function registers()
     {
-        return $this->belongsToMany(Role::class, 'member_register', 'member_id', 'register_id');
+        return $this->belongsToMany(Register::class, 'member_register', 'member_id', 'register_id');
     }
 
     public function attendanceCount()
@@ -71,6 +76,10 @@ class Member extends Model
 
     public function getNextBirthdayAttribute()
     {
+        if ($this->date_of_birth === null) {
+            return null;
+        }
+
         $birthday = Carbon::createFromTimestamp($this->date_of_birth);
         $now = Carbon::now();
 
@@ -98,5 +107,10 @@ class Member extends Model
         "phone_number_international",
         "email",
         "associated",
+        "is_registered",
+    ];
+
+    protected $casts = [
+        "is_registered" => "boolean",
     ];
 }

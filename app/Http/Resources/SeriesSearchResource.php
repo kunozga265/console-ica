@@ -18,7 +18,7 @@ class SeriesSearchResource extends JsonResource
         $latest_sermon=$this->sermons()->orderBy("published_at","desc")->limit(1)->get();
         $first_sermon=$this->sermons()->orderBy("published_at","asc")->limit(1)->get();
 
-        $sermon_count=$this->sermons->count();
+        $sermon_count=$this->sermons()->count();
 
         switch ($sermon_count){
             case 0:
@@ -36,7 +36,7 @@ class SeriesSearchResource extends JsonResource
             "title"         =>  $this->title,
             "description"   =>  $this->description,
             "duration"      =>  $duration,
-            "sermon_count"  =>  intval($this->sermons->count())
+            "sermon_count"  =>  intval($this->sermons()->count())
         ];
     }
 }

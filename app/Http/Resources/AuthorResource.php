@@ -24,7 +24,7 @@ class AuthorResource extends JsonResource
             "slug"              =>  $this->slug,
             "ica_pastor"        =>  intval($this->ica_pastor),
             "biography"         =>  $this->biography,
-            "sermon_count"      =>  intval($this->sermons->count()),
+            "sermon_count"      =>  intval($this->sermons_count ?? $this->sermons()->count()),
             "trashed"           =>  $this->trashed()
         ];
     }

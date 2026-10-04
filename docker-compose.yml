@@ -1,0 +1,62 @@
+# version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: ica_app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - .:/var/www
+    networks:
+      - laravel
+
+  webserver:
+    image: nginx:alpine
+    container_name: ica_nginx
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - .:/var/www
+      - ./docker/nginx:/etc/nginx/conf.d
+    depends_on:
+      - app
+    networks:
+      - laravel
+
+  db:
+    image: mysql:8.0
+    container_name: ica_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ica
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_PASSWORD: root
+      MYSQL_USER: laravel
+    ports:
+      - "3307:3306"
+    volumes:
+      - dbdata:/var/lib/mysql
+    networks:
+      - laravel
+
+  node:
+    image: node:18
+    container_name: ica_node
+    working_dir: /var/www
+    volumes:
+      - .:/var/www
+    ports:
+      - "5173:5173"
+    command: sh -c "npm install --legacy-peer-deps  && npm run dev"
+    networks:
+      - laravel
+
+networks:
+  laravel:
+
+volumes:
+  dbdata:

@@ -20,7 +20,7 @@ class SeriesResource extends JsonResource
         $latest_sermon=$this->sermons()->orderBy("published_at","desc")->limit(1)->get();
         $first_sermon=$this->sermons()->orderBy("published_at","asc")->limit(1)->get();
 
-        $sermon_count=$this->sermons->count();
+        $sermon_count=$this->sermons_count ?? $this->sermons()->count();
 
         switch ($sermon_count){
             case 0:

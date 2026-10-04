@@ -1,20 +1,28 @@
 <script setup>
-import { Head, Link, useForm } from '@inertiajs/vue3';
-import AuthenticationCard from '@/Components/AuthenticationCard.vue';
-import AuthenticationCardLogo from '@/Components/AuthenticationCardLogo.vue';
-import Checkbox from '@/Components/Checkbox.vue';
-import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
-import TextInput from '@/Components/TextInput.vue';
+import { computed } from 'vue';
+import { Link, useForm, usePage } from '@inertiajs/vue3';
+import AuthShell from '@/Components/UI/AuthShell.vue';
+import GoogleButton from '@/Components/UI/GoogleButton.vue';
+import PhoneFields from '@/Components/UI/PhoneFields.vue';
 
 const form = useForm({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
+    gender: '',
+    dateOfBirth: '',
+    phoneNumberAirtel: '',
+    phoneNumberTnm: '',
+    phoneNumberInternational: '',
     password: '',
     password_confirmation: '',
     terms: false,
+    remember: true,
 });
+
+const page = usePage();
+const needsTerms = computed(() => page.props.jetstream?.hasTermsAndPrivacyPolicyFeature);
+const today = new Date().toISOString().slice(0, 10);
 
 const submit = () => {
     form.post(route('register'), {
@@ -24,89 +32,74 @@ const submit = () => {
 </script>
 
 <template>
-    <Head title="Register" />
+    <AuthShell title="Create account" heading="Create your account" sub="We'll link it to your church member profile.">
+        <GoogleButton label="Sign up with Google" />
 
-    <AuthenticationCard>
-        <template #logo>
-            <AuthenticationCardLogo />
-        </template>
+        <div class="auth-or">or with email</div>
 
-        <form @submit.prevent="submit">
-            <div>
-                <InputLabel for="name" value="Name" />
-                <TextInput
-                    id="name"
-                    v-model="form.name"
-                    type="text"
-                    class="mt-1 block w-full"
-                    required
-                    autofocus
-                    autocomplete="name"
-                />
-                <InputError class="mt-2" :message="form.errors.name" />
+        <form class="auth-form" @submit.prevent="submit">
+            <div class="row-2">
+                <label class="field">
+                    <span>First name</span>
+                    <input v-model="form.firstName" type="text" required autofocus autocomplete="given-name" />
+                    <span v-if="form.errors.firstName" class="err">{{ form.errors.firstName }}</span>
+                </label>
+                <label class="field">
+                    <span>Last name</span>
+                    <input v-model="form.lastName" type="text" required autocomplete="family-name" />
+                    <span v-if="form.errors.lastName" class="err">{{ form.errors.lastName }}</span>
+                </label>
             </div>
 
-            <div class="mt-4">
-                <InputLabel for="email" value="Email" />
-                <TextInput
-                    id="email"
-                    v-model="form.email"
-                    type="email"
-                    class="mt-1 block w-full"
-                    required
-                    autocomplete="username"
-                />
-                <InputError class="mt-2" :message="form.errors.email" />
+            <label class="field">
+                <span>Email</span>
+                <input v-model="form.email" type="email" required autocomplete="username" />
+                <span v-if="form.errors.email" class="err">{{ form.errors.email }}</span>
+            </label>
+
+            <div class="field">
+                <span>Gender</span>
+                <div class="seg-choice" role="radiogroup" aria-label="Gender">
+                    <button v-for="g in ['Male', 'Female']" :key="g" type="button" role="radio" :aria-checked="form.gender === g" :class="{ on: form.gender === g }" @click="form.gender = g">
+                        {{ g }}
+                    </button>
+                </div>
+                <span v-if="form.errors.gender" class="err">{{ form.errors.gender }}</span>
             </div>
 
-            <div class="mt-4">
-                <InputLabel for="password" value="Password" />
-                <TextInput
-                    id="password"
-                    v-model="form.password"
-                    type="password"
-                    class="mt-1 block w-full"
-                    required
-                    autocomplete="new-password"
-                />
-                <InputError class="mt-2" :message="form.errors.password" />
+            <PhoneFields :form="form" />
+
+            <label class="field">
+                <span>Date of birth <span class="hint">(optional)</span></span>
+                <input v-model="form.dateOfBirth" type="date" :max="today" autocomplete="bday" />
+                <span v-if="form.errors.dateOfBirth" class="err">{{ form.errors.dateOfBirth }}</span>
+            </label>
+
+            <div class="row-2">
+                <label class="field">
+                    <span>Password</span>
+                    <input v-model="form.password" type="password" required autocomplete="new-password" />
+                </label>
+                <label class="field">
+                    <span>Confirm password</span>
+                    <input v-model="form.password_confirmation" type="password" required autocomplete="new-password" />
+                </label>
             </div>
+            <span v-if="form.errors.password" class="err" style="margin-top: -6px">{{ form.errors.password }}</span>
 
-            <div class="mt-4">
-                <InputLabel for="password_confirmation" value="Confirm Password" />
-                <TextInput
-                    id="password_confirmation"
-                    v-model="form.password_confirmation"
-                    type="password"
-                    class="mt-1 block w-full"
-                    required
-                    autocomplete="new-password"
-                />
-                <InputError class="mt-2" :message="form.errors.password_confirmation" />
-            </div>
+            <label v-if="needsTerms" class="auth-check">
+                <input v-model="form.terms" type="checkbox" required />
+                <span>I agree to the <a class="auth-link" target="_blank" :href="route('terms.show')">Terms</a> and <a class="auth-link" target="_blank" :href="route('policy.show')">Privacy Policy</a></span>
+            </label>
+            <span v-if="form.errors.terms" class="err">{{ form.errors.terms }}</span>
 
-            <div v-if="$page.props.jetstream.hasTermsAndPrivacyPolicyFeature" class="mt-4">
-                <InputLabel for="terms">
-                    <div class="flex items-center">
-                        <Checkbox id="terms" v-model:checked="form.terms" name="terms" required />
-
-                        <div class="ms-2">
-                            I agree to the <a target="_blank" :href="route('terms.show')" class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Terms of Service</a> and <a target="_blank" :href="route('policy.show')" class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Privacy Policy</a>
-                        </div>
-                    </div>
-                    <InputError class="mt-2" :message="form.errors.terms" />
-                </InputLabel>
-            </div>
-
-            <div class="flex items-center justify-end mt-4">
-                <Link :href="route('login')" class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    Already registered?
-                </Link>
-
-                <PrimaryButton class="ms-4" :class="{ 'opacity-25': form.processing }" :disabled="form.processing">
-                    Register
-                </PrimaryButton>
-            </div>
+            <button class="btn btn-primary btn-block" type="submit" :disabled="form.processing">
+                {{ form.processing ? 'Creating account…' : 'Create account' }}
+            </button>
         </form>
-    </AuthenticationCard>
+
+        <template #foot>
+            Already have an account? <Link :href="route('login')">Sign in</Link>
+        </template>
+    </AuthShell>
 </template>

@@ -7,6 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class Prayer extends Model
 {
+    /** Users who said "I'm praying" for this prayer point. */
+    public function prayingUsers()
+    {
+        return $this->belongsToMany(User::class, 'prayer_user')->withTimestamps();
+    }
+
     use HasFactory;
 
     protected $fillable=[

@@ -17,7 +17,10 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
         ]);
 
-        //
+        $middleware->alias([
+            'role' => \App\Http\Middleware\EnsureUserHasRole::class,
+            'has.member' => \App\Http\Middleware\EnsureUserHasMember::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

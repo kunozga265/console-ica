@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\UIShellData;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -14,7 +15,8 @@ class HandleInertiaRequests extends Middleware
      *
      * @var string
      */
-    protected $rootView = 'app';
+    protected $rootView = 'ui';
+
 
     /**
      * Determines the current asset version.
@@ -47,6 +49,29 @@ class HandleInertiaRequests extends Middleware
              'publicPath'=> function() use ($request){
                 return env("APP_URL");
             },
+            // Kept as top-level props (not nested under "auth") since
+            // Jetstream's own ShareInertiaData middleware already shares an
+            // "auth.user" prop via a plain array_merge — nesting under the
+            // same key here would non-deterministically clobber one or the
+            // other depending on middleware order.
+            'roles' => function () use ($request) {
+                return $request->user()?->roles->pluck('name') ?? [];
+            },
+            'isMember' => function () use ($request) {
+                return $request->user()?->member_id !== null;
+            },
+        ], ! $request->is('admin', 'admin/*') ? [
+            // Layout data for the site's pages (top-bar live services, rail cell meeting, …).
+            'liveServices' => fn () => UIShellData::liveServices($request),
+            'nextCellMeeting' => fn () => UIShellData::nextCellMeeting($request),
+            'sermonSaves' => fn () => UIShellData::sermonSaves($request),
+            'notifications' => fn () => UIShellData::notifications($request),
+            'isAdmin' => fn () => (bool) $request->user()?->hasAnyRole(['admin', 'super']),
+            // Lets the sign-in pages explain why they're shown after scanning a check-in QR code.
+            'authIntent' => fn () => str_contains((string) $request->session()->get('url.intended'), '/check-in/') ? 'check-in' : null,
+        ] : [
+            // Sidebar counts for the admin area.
+            'adminCounts' => fn () => \App\Support\AdminCounts::get(),
         ]);
     }
 }

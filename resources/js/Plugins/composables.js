@@ -3,6 +3,8 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useDateFormat, useNow } from '@vueuse/core'
 
 export function fileUrl(path) {
+    // Some avatars (Google sign-in, legacy mobile sign-ups) are already absolute.
+    if (/^https?:\/\//.test(path ?? '')) return path
     return import.meta.env.VITE_APP_URL + path
 }
 

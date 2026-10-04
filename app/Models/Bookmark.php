@@ -9,6 +9,16 @@ class Bookmark extends Model
 {
     use HasFactory;
 
+    public function sermon()
+    {
+        return $this->belongsTo(Sermon::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
     protected $fillable = [
         "date",
         "user_id",
