@@ -20,7 +20,7 @@ class SermonController extends Controller
     private const PER_PAGE = 18;
 
     /** Everything but the body, which list cards never show. */
-    private const LIST_COLUMNS = ['id', 'title', 'subtitle', 'video_url', 'author_id', 'series_id', 'ministry_id', 'published_at', 'created_at'];
+    private const LIST_COLUMNS = ['id', 'slug', 'title', 'subtitle', 'video_url', 'author_id', 'series_id', 'ministry_id', 'published_at', 'created_at'];
 
     public function index(Request $request)
     {
@@ -39,8 +39,9 @@ class SermonController extends Controller
             ->when($filters['search'] ?? null, fn (Builder $q, $search) => $q->where(
                 fn (Builder $q) => $q->where('title', 'like', "%{$search}%")->orWhere('subtitle', 'like', "%{$search}%")
             ))
-            ->when($filters['author'] ?? null, fn (Builder $q, $author) => $q->where('author_id', $author))
-            ->when($filters['series'] ?? null, fn (Builder $q, $series) => $q->where('series_id', $series))
+            // Ministers and series are addressed by slug (?author=enson-lwesya-2021-12-08), as on the old site.
+            ->when($filters['author'] ?? null, fn (Builder $q, $author) => $q->whereIn('author_id', Author::where('slug', $author)->select('id')))
+            ->when($filters['series'] ?? null, fn (Builder $q, $series) => $q->whereIn('series_id', Series::where('slug', $series)->select('id')))
             ->when($filters['ministry'] ?? null, fn (Builder $q, $ministry) => $q->where('ministry_id', $ministry))
             ->when($from, fn (Builder $q) => $q->where('published_at', '>=', $from->getTimestamp()))
             ->when($to, fn (Builder $q) => $q->where('published_at', '<=', $to->getTimestamp()))
@@ -66,9 +67,19 @@ class SermonController extends Controller
         ]);
     }
 
-    public function show(Request $request, Sermon $sermon)
+    /**
+     * /sermons/{slug} — the same URLs the old site and the mobile app share.
+     * Numeric ids (links shared from this site before slugs) redirect to the slug.
+     */
+    public function show(Request $request, string $sermon)
     {
-        abort_if($sermon->published_at > now()->getTimestamp(), 404);
+        $found = $this->published(Sermon::query())->where('slug', $sermon)->latest('id')->first();
+
+        if (! $found && ctype_digit($sermon) && ($byId = $this->published(Sermon::query())->find($sermon))) {
+            return redirect()->route('ui.sermons.show', $byId->slug, 301);
+        }
+        abort_unless($found, 404);
+        $sermon = $found;
 
         $sermon->load(['author', 'series', 'ministry']);
         $user = $request->user();

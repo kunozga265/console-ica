@@ -27,7 +27,7 @@ class DashboardController extends Controller
 
         // Only the featured (latest) sermon shows its body, so the rest leave it out.
         $sermons = Sermon::with(['author', 'series'])
-            ->select(['id', 'title', 'subtitle', 'video_url', 'author_id', 'series_id', 'published_at', 'created_at'])
+            ->select(['id', 'slug', 'title', 'subtitle', 'video_url', 'author_id', 'series_id', 'published_at', 'created_at'])
             ->where('published_at', '<=', $now)
             ->orderByRaw('published_at DESC, created_at DESC')
             ->limit(self::LIMIT)

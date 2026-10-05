@@ -51,8 +51,8 @@ const clearFilters = () => {
 
 // Quick filters: the three most prolific ministers and the two most recent series.
 const chips = computed(() => [
-    ...props.ministers.slice(0, 3).map((m) => ({ key: 'author', id: m.id, label: authorName(m) })),
-    ...props.series.slice(0, 2).map((s) => ({ key: 'series', id: s.id, label: s.title })),
+    ...props.ministers.slice(0, 3).map((m) => ({ key: 'author', id: m.slug, label: authorName(m) })),
+    ...props.series.slice(0, 2).map((s) => ({ key: 'series', id: s.slug, label: s.title })),
 ]);
 const noFilter = computed(() => !props.filters.author && !props.filters.series);
 const isOn = (chip) => String(props.filters[chip.key] ?? '') === String(chip.id);
@@ -71,11 +71,11 @@ const pills = computed(() => {
         list.push({ label: mi ? mi.name : 'Ministry', keys: ['ministry'] });
     }
     if (f.author) {
-        const m = props.ministers.find((x) => String(x.id) === String(f.author));
+        const m = props.ministers.find((x) => x.slug === f.author);
         list.push({ label: `By ${m ? authorName(m) : 'minister'}`, keys: ['author'] });
     }
     if (f.series) {
-        const se = props.series.find((x) => String(x.id) === String(f.series));
+        const se = props.series.find((x) => x.slug === f.series);
         list.push({ label: `Series: ${se ? se.title : 'selected'}`, keys: ['series'] });
     }
     if (f.from || f.to) {
@@ -161,9 +161,9 @@ const loadMore = () => {
                         v-for="m in ministers"
                         :key="m.id"
                         class="minister-avatar"
-                        :class="{ on: String(filters.author) === String(m.id) }"
+                        :class="{ on: filters.author === m.slug }"
                         :aria-label="`${authorName(m)} — view sermons`"
-                        @click="filterBy('author', m.id)"
+                        @click="filterBy('author', m.slug)"
                         @mouseenter="showTip($event, m)"
                         @mouseleave="hideTip"
                         @focus="showTip($event, m)"

@@ -22,7 +22,7 @@ defineProps({
         <p v-if="minister.biography" class="small muted mt-12 clamp-3" style="line-height: 1.55">{{ minister.biography }}</p>
         <div class="between mt-16">
             <span class="badge badge-outline">{{ minister.sermonCount }} sermons</span>
-            <Link class="small" style="font-weight: 600; color: var(--accent-2)" :href="route('ui.sermons.index', { author: minister.id }) + '#all'">View sermons →</Link>
+            <Link class="small" style="font-weight: 600; color: var(--accent-2)" :href="route('ui.sermons.index', { author: minister.slug }) + '#all'">View sermons →</Link>
         </div>
     </article>
 </template>

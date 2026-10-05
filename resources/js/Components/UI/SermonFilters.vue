@@ -100,7 +100,7 @@ onBeforeUnmount(() => {
                     <div class="fp-label">Minister</div>
                     <label class="fp-search"><Icon name="search" /><input v-model="ministerQuery" type="search" placeholder="Search ministers…" /></label>
                     <div class="fp-list">
-                        <button v-for="m in ministerOptions" :key="m.id" class="fp-option" :class="{ on: draft.author === String(m.id) }" @click="pick('author', m.id)">
+                        <button v-for="m in ministerOptions" :key="m.id" class="fp-option" :class="{ on: draft.author === m.slug }" @click="pick('author', m.slug)">
                             <Avatar :person="m" size="sm" />
                             <span class="grow">{{ authorName(m) }}</span>
                             <span class="tiny muted">{{ m.sermonCount }}</span>
@@ -113,7 +113,7 @@ onBeforeUnmount(() => {
                     <div class="fp-label">Series</div>
                     <label class="fp-search"><Icon name="search" /><input v-model="seriesQuery" type="search" placeholder="Search series…" /></label>
                     <div class="fp-list">
-                        <button v-for="s in seriesOptions" :key="s.id" class="fp-option" :class="{ on: draft.series === String(s.id) }" @click="pick('series', s.id)">
+                        <button v-for="s in seriesOptions" :key="s.id" class="fp-option" :class="{ on: draft.series === s.slug }" @click="pick('series', s.slug)">
                             <span class="grow">{{ s.title }}</span>
                             <span class="tiny muted">{{ s.sermonCount }}</span>
                         </button>

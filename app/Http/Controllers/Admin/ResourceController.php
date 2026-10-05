@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Download;
 use Carbon\Carbon;
+use App\Support\Slug;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 /** The documents members can view/download on the site (`downloads` table). */
@@ -29,7 +29,7 @@ class ResourceController extends Controller
     public function store(Request $request)
     {
         $v = $this->validated($request);
-        Download::create($this->attributes($v) + ['slug' => Str::slug($v['title']) . date('-Y-m-d')]);
+        Download::create($this->attributes($v) + ['slug' => Slug::unique(Download::class, $v['title'])]);
 
         return back()->with('success', 'Resource added');
     }

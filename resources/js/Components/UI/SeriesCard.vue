@@ -8,7 +8,7 @@ const props = defineProps({
 });
 
 // Opens the sermon list filtered to this series.
-const open = () => router.visit(route('ui.sermons.index', { series: props.series.id }) + '#all');
+const open = () => router.visit(route('ui.sermons.index', { series: props.series.slug }) + '#all');
 </script>
 
 <template>

@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Series;
 use Carbon\Carbon;
+use App\Support\Slug;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class SeriesController extends Controller
@@ -51,7 +51,7 @@ class SeriesController extends Controller
     public function store(Request $request)
     {
         $v = $this->validated($request);
-        Series::create($v + ['slug' => Str::slug($v['title']) . date('-Y-m-d')]);
+        Series::create($v + ['slug' => Slug::unique(Series::class, $v['title'])]);
 
         return back()->with('success', 'Series created');
     }

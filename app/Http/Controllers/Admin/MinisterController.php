@@ -6,8 +6,8 @@ use App\Http\Controllers\Admin\Concerns\StoresUploads;
 use App\Http\Controllers\Controller;
 use App\Models\Author;
 use App\Models\Sermon;
+use App\Support\Slug;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 /** Ministers are the `authors` of sermons. */
@@ -54,7 +54,7 @@ class MinisterController extends Controller
     {
         $v = $this->validated($request);
         Author::create($this->attributes($v) + [
-            'slug'   => Str::slug($v['name']) . date('-Y-m-d'),
+            'slug'   => Slug::unique(Author::class, $v['name']),
             'avatar' => $this->storeUpload($request, 'avatar', 'images/authors') ?? 'images/avatar.png',
         ]);
 

@@ -864,6 +864,8 @@
 .ica-ui .reader-body span[id].hl { background:var(--hl); color:var(--ink); }
 .ica-ui .reader-body span[id].active { box-shadow:0 0 0 2px var(--accent); }
 .ica-ui .reader-body a.data { color:inherit; text-decoration:none; }
+.ica-ui .reader-body a.body-link { color:var(--accent); text-decoration:underline; text-underline-offset:2px; text-decoration-thickness:1px; cursor:pointer; }
+.ica-ui .reader-body a.body-link:hover { text-decoration-thickness:2px; }
 .ica-ui .reader-body strong, .ica-ui .reader-body b { color:var(--ink); font-weight:600; }
 .ica-ui .reader-body ul, .ica-ui .reader-body ol { padding-left:22px; margin-bottom:18px; list-style:revert; }
 .ica-ui .reader-body li { margin-bottom:6px; }

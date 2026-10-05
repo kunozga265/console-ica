@@ -14,6 +14,7 @@ class SermonResource extends JsonResource
     {
         return [
             'id'          => intval($this->id),
+            'slug'        => $this->slug,
             'title'       => $this->title,
             'subtitle'    => $this->subtitle,
             'videoUrl'    => $this->video_url,
@@ -22,6 +23,7 @@ class SermonResource extends JsonResource
             'publishedAt' => intval($this->published_at) * 1000,
             'author'      => $this->author ? [
                 'id'     => intval($this->author->id),
+                'slug'   => $this->author->slug,
                 'name'   => $this->author->name,
                 'suffix' => trim((string) $this->author->suffix),
                 'title'  => $this->author->title,
@@ -30,6 +32,7 @@ class SermonResource extends JsonResource
             'ministry'    => $this->whenLoaded('ministry', fn () => $this->ministry ? ['id' => intval($this->ministry->id), 'name' => $this->ministry->name] : null),
             'series'      => $this->series ? [
                 'id'    => intval($this->series->id),
+                'slug'  => $this->series->slug,
                 'title' => $this->series->title,
             ] : null,
         ];

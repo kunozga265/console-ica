@@ -86,7 +86,7 @@ const restore = () => submit('post', route('admin.sermons.restore', props.sermon
                     <button class="btn btn-primary mt-16" style="width: 100%" :disabled="busy || !form.title || !form.body || !form.authorId" @click="save">
                         {{ busy ? 'Saving…' : editing ? 'Save changes' : 'Create sermon' }}
                     </button>
-                    <a v-if="editing && !scheduled && !sermon.deleted" class="btn btn-ghost mt-8" style="width: 100%" :href="route('ui.sermons.show', sermon.id)" target="_blank"><Icon name="eye" /> View on site</a>
+                    <a v-if="editing && !scheduled && !sermon.deleted" class="btn btn-ghost mt-8" style="width: 100%" :href="route('ui.sermons.show', sermon.slug)" target="_blank"><Icon name="eye" /> View on site</a>
                 </section>
 
                 <section class="card card-pad">

@@ -15,7 +15,7 @@ use Inertia\Inertia;
 /** The signed-in user's own page: notes, saved things and attendance history. */
 class ProfileController extends Controller
 {
-    private const SERMON_COLUMNS = ['id', 'title', 'subtitle', 'video_url', 'author_id', 'series_id', 'ministry_id', 'published_at', 'created_at'];
+    private const SERMON_COLUMNS = ['id', 'slug', 'title', 'subtitle', 'video_url', 'author_id', 'series_id', 'ministry_id', 'published_at', 'created_at'];
 
     public function __invoke(Request $request)
     {

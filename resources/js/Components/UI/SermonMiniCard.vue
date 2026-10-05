@@ -10,7 +10,7 @@ const props = defineProps({
     sermon: { type: Object, required: true },
 });
 
-const open = () => router.visit(route('ui.sermons.show', props.sermon.id));
+const open = () => router.visit(route('ui.sermons.show', props.sermon.slug));
 </script>
 
 <template>

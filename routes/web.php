@@ -36,7 +36,7 @@ $auth = ['auth:sanctum', config('jetstream.auth_session'), 'verified'];
 Route::name('ui.')->group(function () use ($auth) {
     Route::get('/', UIDashboardController::class)->name('dashboard');
     Route::get('/sermons', [UISermonController::class, 'index'])->name('sermons.index');
-    Route::get('/sermons/{sermon}', [UISermonController::class, 'show'])->whereNumber('sermon')->name('sermons.show');
+    Route::get('/sermons/{sermon}', [UISermonController::class, 'show'])->name('sermons.show'); // slug (legacy URLs) or numeric id → redirect
     Route::get('/give', UIGiveController::class)->name('give');
     Route::get('/events', [UIEventController::class, 'index'])->name('events');
     Route::get('/prayer', [UIPrayerController::class, 'index'])->name('prayer');

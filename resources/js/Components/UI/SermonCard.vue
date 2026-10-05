@@ -11,7 +11,7 @@ const props = defineProps({
     feature: { type: Boolean, default: false },
 });
 
-const open = () => router.visit(route('ui.sermons.show', props.sermon.id));
+const open = () => router.visit(route('ui.sermons.show', props.sermon.slug));
 </script>
 
 <template>

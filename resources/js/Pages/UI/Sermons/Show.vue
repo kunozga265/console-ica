@@ -81,11 +81,26 @@ const paint = () => {
 };
 watch([highlights.ids, lineBookmarks.ids, active], () => nextTick(paint));
 
+// Real links in the body (Bible references etc.) open in a new tab; the numbered
+// sentence anchors (<a class="data">) stay inert so tapping a line highlights it.
+const isExternal = (a) => /^https?:\/\//i.test(a.getAttribute('href') ?? '');
+const decorateLinks = () => {
+    bodyEl.value?.querySelectorAll('a[href]').forEach((a) => {
+        if (!isExternal(a)) return;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.classList.add('body-link');
+    });
+};
+watch(() => props.renderedBody, () => nextTick(decorateLinks));
+
 const closePop = () => (active.value = null);
 
 const onBodyClick = (e) => {
+    const link = e.target.closest('a');
+    if (link && isExternal(link)) return; // let the browser open it (new tab)
     // The spans wrap <a href="n"> anchors (used by the mobile app); never follow them here.
-    if (e.target.closest('a')) e.preventDefault();
+    if (link) e.preventDefault();
     const span = e.target.closest('span[id]');
     if (!span) return closePop();
     const rect = span.getBoundingClientRect();
@@ -116,6 +131,7 @@ const onKey = (e) => e.key === 'Escape' && closePop();
 
 onMounted(() => {
     nextTick(paint);
+    nextTick(decorateLinks);
     document.addEventListener('mousedown', onDocDown);
     document.addEventListener('scroll', closePop, true);
     document.addEventListener('keydown', onKey);
@@ -177,7 +193,7 @@ const saveNote = () => {
                         :href="route('ui.sermons.index', { ministry: s.ministry.id }) + '#all'">{{ s.ministry.name }}
                     </Link>
                     <Link v-if="s.series" class="badge badge-gold"
-                        :href="route('ui.sermons.index', { series: s.series.id }) + '#all'">{{ s.series.title }}</Link>
+                        :href="route('ui.sermons.index', { series: s.series.slug }) + '#all'">{{ s.series.title }}</Link>
                     <span class="tiny muted">{{ fmtDate(s.publishedAt) }}</span>
                 </div>
                 <div class="block md:hidden"> <span class="tiny muted">{{ fmtDate(s.publishedAt) }}</span></div>
@@ -185,7 +201,7 @@ const saveNote = () => {
                 <p v-if="s.subtitle" class="muted mt-8" style="font-size: 15px">{{ s.subtitle }}</p>
                 <div class="block md:hidden">
                     <Link v-if="s.series" class="badge badge-gold"
-                        :href="route('ui.sermons.index', { series: s.series.id }) + '#all'">{{ s.series.title }}</Link>
+                        :href="route('ui.sermons.index', { series: s.series.slug }) + '#all'">{{ s.series.title }}</Link>
                 </div>
                 <div class="byline block md:flex md:justify-between">
                     <div class="flex items-center gap-12 mb-4">
@@ -199,7 +215,7 @@ const saveNote = () => {
                     <div class="flex md:justify-end">
                         <BookmarkButton :sermon-id="s.id" kind="favorite" />
                         <BookmarkButton :sermon-id="s.id" />
-                        <ShareButton :title="s.title" :url="route('ui.sermons.show', s.id)" />
+                        <ShareButton :title="s.title" :url="route('ui.sermons.show', s.slug)" />
                     </div>
                 </div>
 
@@ -242,7 +258,7 @@ const saveNote = () => {
                     <h2 style="font-size: 19px">Sermons in series</h2>
                     <span class="badge badge-gold">{{ s.series.title }}</span>
                     <div class="spacer"></div>
-                    <Link class="link" :href="route('ui.sermons.index', { series: s.series.id }) + '#all'">View series →
+                    <Link class="link" :href="route('ui.sermons.index', { series: s.series.slug }) + '#all'">View series →
                     </Link>
                 </div>
                 <div class="hrow" style="--w: 280px">
@@ -251,7 +267,7 @@ const saveNote = () => {
             </section>
 
             <nav v-if="previous || next" class="sermon-pager" aria-label="Previous and next sermon">
-                <Link v-if="previous" class="pager-link prev" :href="route('ui.sermons.show', previous.id)">
+                <Link v-if="previous" class="pager-link prev" :href="route('ui.sermons.show', previous.slug)">
                     <span class="arrow">
                         <Icon name="chevright" />
                     </span>
@@ -261,7 +277,7 @@ const saveNote = () => {
                     </span>
                 </Link>
                 <span v-else></span>
-                <Link v-if="next" class="pager-link next" :href="route('ui.sermons.show', next.id)">
+                <Link v-if="next" class="pager-link next" :href="route('ui.sermons.show', next.slug)">
                     <span class="grow">
                         <span class="label">Next sermon</span>
                         <span class="title">{{ next.title }}</span>

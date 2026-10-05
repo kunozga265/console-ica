@@ -9,8 +9,8 @@ use App\Models\Series;
 use App\Models\Sermon;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
+use App\Support\Slug;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class SermonController extends Controller
@@ -23,7 +23,7 @@ class SermonController extends Controller
         $now = now()->getTimestamp();
 
         $page = Sermon::query()
-            ->select(['id', 'title', 'subtitle', 'video_url', 'author_id', 'series_id', 'ministry_id', 'published_at', 'deleted_at'])
+            ->select(['id', 'slug', 'title', 'subtitle', 'video_url', 'author_id', 'series_id', 'ministry_id', 'published_at', 'deleted_at'])
             ->with(['author', 'series', 'ministry'])
             ->withSum('viewRecords', 'count')
             ->when(($filters['status'] ?? null) === 'deleted', fn (Builder $q) => $q->onlyTrashed())
@@ -40,6 +40,7 @@ class SermonController extends Controller
         return Inertia::render('Admin/Sermons/Index', [
             'sermons' => collect($page->items())->map(fn (Sermon $s) => [
                 'id'       => $s->id,
+                'slug'     => $s->slug,
                 'title'    => $s->title,
                 'subtitle' => $s->subtitle,
                 'author'   => $s->author ? ['id' => $s->author->id, 'name' => trim($s->author->suffix . ' ' . $s->author->name), 'avatar' => $s->author->avatar] : null,
@@ -66,6 +67,7 @@ class SermonController extends Controller
         return Inertia::render('Admin/Sermons/Form', [
             'sermon' => [
                 'id'          => $sermon->id,
+                'slug'        => $sermon->slug,
                 'title'       => $sermon->title,
                 'subtitle'    => $sermon->subtitle,
                 'body'        => $sermon->body,
@@ -83,7 +85,7 @@ class SermonController extends Controller
     public function store(Request $request)
     {
         $v = $this->validated($request);
-        $sermon = Sermon::create($this->attributes($v) + ['slug' => Str::slug($v['title']) . date('-Y-m-d')]);
+        $sermon = Sermon::create($this->attributes($v) + ['slug' => Slug::unique(Sermon::class, $v['title'])]);
 
         return redirect()->route('admin.sermons.edit', $sermon)->with('success', 'Sermon created');
     }

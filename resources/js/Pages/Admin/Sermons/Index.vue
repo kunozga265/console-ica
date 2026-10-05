@@ -89,7 +89,7 @@ const restore = (s) => submit('post', route('admin.sermons.restore', s.id));
                     </div>
                     <div class="tile-actions">
                         <Link class="btn btn-soft btn-sm" :href="route('admin.sermons.edit', s.id)"><Icon name="pencil" /> Edit</Link>
-                        <a v-if="s.status === 'published'" class="btn btn-soft btn-sm" :href="route('ui.sermons.show', s.id)" target="_blank"><Icon name="eye" /> View</a>
+                        <a v-if="s.status === 'published'" class="btn btn-soft btn-sm" :href="route('ui.sermons.show', s.slug)" target="_blank"><Icon name="eye" /> View</a>
                         <button v-if="s.status === 'deleted'" class="btn btn-soft btn-sm" @click="restore(s)"><Icon name="restore" /> Restore</button>
                         <button v-else class="btn btn-soft btn-sm btn-icon" aria-label="Delete" @click="deleting = s"><Icon name="trash" /></button>
                     </div>
