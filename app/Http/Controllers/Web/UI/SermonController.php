@@ -10,6 +10,7 @@ use App\Models\Author;
 use App\Models\Ministry;
 use App\Models\Series;
 use App\Models\Sermon;
+use App\Support\SermonViews;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -80,6 +81,11 @@ class SermonController extends Controller
         }
         abort_unless($found, 404);
         $sermon = $found;
+
+        // Every open counts as a view, credited to the signed-in user when there is one.
+        if (SermonViews::isGenuineOpen($request)) {
+            SermonViews::record($sermon, $request->user());
+        }
 
         $sermon->load(['author', 'series', 'ministry']);
         $user = $request->user();

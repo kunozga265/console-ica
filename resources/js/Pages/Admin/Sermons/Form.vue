@@ -66,7 +66,7 @@ const restore = () => submit('post', route('admin.sermons.restore', props.sermon
                 <label class="field mt-12"><span>Subtitle</span><input v-model="form.subtitle" type="text" placeholder="Optional" /></label>
                 <div class="field mt-16">
                     <span>Message *</span>
-                    <RichEditor v-model="form.body" placeholder="Write or paste the sermon…" />
+                    <RichEditor v-model="form.body" placeholder="Write or paste the sermon…" :upload-url="route('admin.uploads.image')" />
                 </div>
                 <p v-if="errors.body" class="field-error">{{ errors.body }}</p>
             </section>

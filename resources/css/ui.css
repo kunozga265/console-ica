@@ -1265,3 +1265,15 @@
 .ica-ui .share-target { display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 4px; border-radius:var(--radius-sm); font-size:12px; font-weight:600; color:var(--ink-soft); }
 .ica-ui .share-target:hover { background:var(--surface-2); }
 .ica-ui .share-target span { width:40px; height:40px; border-radius:50%; display:grid; place-items:center; color:#fff; font-weight:700; font-size:16px; }
+
+/* ---- Rich editor: links & images ---- */
+.ica-ui .re-toolbar button:disabled { opacity:.5; }
+.ica-ui .re-linkbar { display:flex; gap:6px; padding:8px; border-bottom:1px solid var(--line-soft); background:var(--surface); }
+.ica-ui .re-linkbar input { flex:1; min-width:0; height:32px; padding:0 10px; border-radius:8px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); font-size:13px; }
+.ica-ui .re-linkbtn { height:32px; padding:0 12px; border-radius:8px; font-size:13px; font-weight:600; color:var(--ink-soft); background:var(--surface-2); }
+.ica-ui .re-linkbtn.primary { background:var(--primary); color:var(--primary-ink); }
+.ica-ui .re-error { margin:0; padding:6px 10px; font-size:12px; color:var(--danger); background:color-mix(in srgb, var(--danger) 8%, transparent); }
+.ica-ui .re-content a { color:var(--accent); text-decoration:underline; text-underline-offset:2px; }
+.ica-ui .re-content img { max-width:100%; height:auto; border-radius:10px; margin:8px 0; display:block; }
+.ica-ui .re-content img.ProseMirror-selectednode { outline:3px solid var(--accent); }
+.ica-ui .reader-body img, .ica-ui .rich-text img { max-width:100%; height:auto; border-radius:12px; margin:12px 0; }

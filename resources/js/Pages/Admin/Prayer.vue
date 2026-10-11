@@ -89,7 +89,7 @@ const destroy = () => submit('delete', route('admin.prayer.destroy', deleting.va
                 <label class="field"><span>Verses</span><input v-model="form.verses" type="text" placeholder="e.g. Proverbs 22:6 ESV" /></label>
             </div>
             <label class="field mt-12"><span>Title *</span><input v-model="form.title" type="text" /></label>
-            <div class="field mt-12"><span>Prayer *</span><RichEditor v-model="form.body" placeholder="Points to pray through…" /></div>
+            <div class="field mt-12"><span>Prayer *</span><RichEditor v-model="form.body" placeholder="Points to pray through…" :upload-url="route('admin.uploads.image')" /></div>
             <p v-if="firstError" class="field-error">{{ firstError }}</p>
             <template #footer>
                 <button class="btn btn-soft btn-sm" @click="editing = null">Cancel</button>

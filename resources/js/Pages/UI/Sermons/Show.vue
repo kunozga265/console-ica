@@ -54,7 +54,8 @@ const useMarks = (kind, serverList) => {
         }
         // Optimistic; the redirect back reloads the real list.
         server.value = on ? [...server.value, spanId] : server.value.filter((x) => x !== spanId);
-        const opts = { preserveScroll: true, preserveState: true, onSuccess: () => toast(on ? labels[0] : labels[1]) };
+        // Only reload this list (a full reload would also count as another sermon view).
+        const opts = { preserveScroll: true, preserveState: true, only: [kind], onSuccess: () => toast(on ? labels[0] : labels[1]) };
         if (on) {
             const payload = kind === 'highlights' ? { highlightId: Number(spanId) } : { captionId: Number(spanId), caption };
             router.post(route(`ui.${kind}.store`, s.value.id), payload, opts);
@@ -170,6 +171,7 @@ const saveNote = () => {
     const opts = {
         preserveScroll: true,
         preserveState: true,
+        only: ['note'],
         onStart: () => (saving.value = true),
         onFinish: () => (saving.value = false),
         onSuccess: () => toast(body ? 'Note saved' : 'Note removed'),

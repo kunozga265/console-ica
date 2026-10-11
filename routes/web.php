@@ -122,6 +122,9 @@ Route::middleware($auth)->prefix('member-link')->name('member-link.')->group(fun
 |--------------------------------------------------------------------------
 */
 Route::middleware([...$auth, 'role:admin,super'])->prefix('admin')->name('admin.')->group(function () {
+    // Images dropped/inserted into the sermon & prayer WYSIWYG editors.
+    Route::post('/uploads/image', Admin\EditorImageController::class)->middleware('throttle:60,1')->name('uploads.image');
+
     Route::get('/', Admin\DashboardController::class)->name('dashboard');
 
     Route::get('/sermons', [Admin\SermonController::class, 'index'])->name('sermons.index');
