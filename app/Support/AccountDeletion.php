@@ -24,7 +24,7 @@ class AccountDeletion
         DB::transaction(function () use ($user) {
             $id = $user->id;
 
-            foreach (['highlights', 'bookmarks', 'notes', 'sermon_saves', 'prayer_user', 'event_responses',
+            foreach (['highlights', 'bookmarks', 'notes', 'sermon_saves', 'sermon_fills', 'prayer_user', 'event_responses',
                       'cell_join_requests', 'ui_notifications', 'usage_user', 'user_role', 'sessions'] as $table) {
                 DB::table($table)->where('user_id', $id)->delete();
             }

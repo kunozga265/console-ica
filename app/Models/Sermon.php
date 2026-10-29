@@ -67,6 +67,25 @@ class Sermon extends Model
       return "sermons_index";
     }
 
+    /**
+     * When fill-in-the-blank answers become visible (unix seconds): 24 hours
+     * after publishing, or earlier if an admin revealed them.
+     */
+    public function fillsRevealAt(): int
+    {
+        $auto = intval($this->published_at) + 86400;
+
+        return $this->fills_revealed_at ? min($auto, intval($this->fills_revealed_at)) : $auto;
+    }
+
+    /** Ids of the body's blanks (<mark data-fill="…">), in order. */
+    public function fillKeys(): array
+    {
+        preg_match_all('/<mark\b[^>]*\bdata-fill=["\']([a-z0-9]{4,16})["\']/i', (string) $this->body, $m);
+
+        return array_values(array_unique($m[1]));
+    }
+
     public function refactorBody()
     {
         return (new HelperController())->generateHighlightLinks($this->body);

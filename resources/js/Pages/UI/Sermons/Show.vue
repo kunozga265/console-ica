@@ -1,6 +1,6 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { Link, router } from '@inertiajs/vue3';
+import { Link, router, usePage } from '@inertiajs/vue3';
 import UILayout from '@/Layouts/UILayout.vue';
 import Icon from '@/Components/UI/Icon.vue';
 import ShareButton from '@/Components/UI/ShareButton.vue';
@@ -8,6 +8,7 @@ import Avatar from '@/Components/UI/Avatar.vue';
 import BookmarkButton from '@/Components/UI/BookmarkButton.vue';
 import SermonMiniCard from '@/Components/UI/SermonMiniCard.vue';
 import RichEditor from '@/Components/UI/RichEditor.vue';
+import Modal from '@/Components/UI/Modal.vue';
 import { authorName, copyText, fmtDate } from '@/Components/UI/helpers';
 import { storedList, toast } from '@/Components/UI/useMemberActions';
 
@@ -22,6 +23,8 @@ const props = defineProps({
     inSeries: { type: Array, default: () => [] }, // the rest of this sermon's series, in order
     previous: { type: Object, default: null },
     next: { type: Object, default: null },
+    fills: { type: Object, default: () => ({}) }, // { blankKey: what this user wrote }
+    revealAt: { type: Number, default: 0 }, // ms — when blanks show the real words
 });
 
 const s = computed(() => props.sermon);
@@ -95,9 +98,81 @@ const decorateLinks = () => {
 };
 watch(() => props.renderedBody, () => nextTick(decorateLinks));
 
+/*
+ * ---- Fill-in-the-blanks: <mark data-fill="key">answer</mark> ----
+ * Until revealAt the answer is hidden: members see their own entry or a gap.
+ * After it, gaps show the real word; a member's differing entry stays, and
+ * tapping it compares the two (they choose whether to switch).
+ */
+const page = usePage();
+const signedIn = computed(() => !!page.props.auth?.user);
+const now = ref(Date.now());
+let clock;
+const revealed = computed(() => now.value >= props.revealAt);
+const norm = (t) => (t ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+const fillMarks = () => [...(bodyEl.value?.querySelectorAll('mark[data-fill]') ?? [])];
+const decorateFills = () =>
+    fillMarks().forEach((m) => {
+        if (m.dataset.answer === undefined) m.dataset.answer = m.textContent;
+        const answer = m.dataset.answer;
+        const mine = props.fills?.[m.dataset.fill] ?? '';
+        let state;
+        if (!revealed.value) {
+            state = mine ? 'filled' : 'blank';
+            m.textContent = mine || '\u00a0';
+        } else if (mine && norm(mine) !== norm(answer)) {
+            state = 'mine';
+            m.textContent = mine;
+        } else {
+            state = mine ? 'correct' : 'revealed';
+            m.textContent = answer;
+        }
+        m.className = `fill-word fill-${state} fill-ready`;
+        m.style.setProperty('--len', `${Math.max(4, Math.min(answer.length, 24))}ch`);
+        const interactive = ['blank', 'filled', 'mine'].includes(state);
+        m.toggleAttribute('tabindex', interactive);
+        if (interactive) m.tabIndex = 0;
+        m.setAttribute('role', interactive ? 'button' : 'mark');
+        m.setAttribute('aria-label', state === 'blank' ? 'Fill in the blank' : state === 'mine' ? `Your answer: ${mine}. Tap to compare` : m.textContent);
+    });
+watch([() => props.renderedBody, () => props.fills, revealed], () => nextTick(decorateFills));
+
+const fillPop = ref(null); // { key, answer, mine }
+const fillDraft = ref('');
+const fillInput = ref(null);
+const fillSaving = ref(false);
+const openFill = (m) => {
+    const key = m.dataset.fill;
+    closePop();
+    fillPop.value = { key, answer: m.dataset.answer, mine: props.fills?.[key] ?? '' };
+    fillDraft.value = fillPop.value.mine;
+    nextTick(() => fillInput.value?.focus());
+};
+const closeFill = () => (fillPop.value = null);
+const saveFill = (value) => {
+    const { key } = fillPop.value;
+    fillSaving.value = true;
+    router.post(route('ui.fills.store', s.value.id), { key, value }, {
+        preserveScroll: true,
+        preserveState: true,
+        only: ['fills'], // a full reload would also count another view
+        onSuccess: () => {
+            toast(value?.trim() ? 'Saved' : 'Cleared');
+            closeFill();
+        },
+        onError: (e) => toast(e.value || e.key || "Couldn't save that"),
+        onFinish: () => (fillSaving.value = false),
+    });
+};
+
 const closePop = () => (active.value = null);
 
 const onBodyClick = (e) => {
+    const blank = e.target.closest('mark.fill-blank, mark.fill-filled, mark.fill-mine');
+    if (blank) {
+        e.preventDefault();
+        return openFill(blank);
+    }
     const link = e.target.closest('a');
     if (link && isExternal(link)) return; // let the browser open it (new tab)
     // The spans wrap <a href="n"> anchors (used by the mobile app); never follow them here.
@@ -129,10 +204,20 @@ const onDocDown = (e) => {
     if (active.value && !e.target.closest('.hl-pop') && !e.target.closest('.reader-body span[id]')) closePop();
 };
 const onKey = (e) => e.key === 'Escape' && closePop();
+// Keyboard: Enter/Space on a focused blank opens it.
+const onBodyKey = (e) => {
+    const blank = e.target.closest?.('mark.fill-blank, mark.fill-filled, mark.fill-mine');
+    if (blank && (e.key === 'Enter' || e.key === ' ')) {
+        e.preventDefault();
+        openFill(blank);
+    }
+};
 
 onMounted(() => {
     nextTick(paint);
     nextTick(decorateLinks);
+    nextTick(decorateFills);
+    clock = setInterval(() => (now.value = Date.now()), 60000); // blanks reveal on time without a reload
     document.addEventListener('mousedown', onDocDown);
     document.addEventListener('scroll', closePop, true);
     document.addEventListener('keydown', onKey);
@@ -141,6 +226,7 @@ onBeforeUnmount(() => {
     document.removeEventListener('mousedown', onDocDown);
     document.removeEventListener('scroll', closePop, true);
     document.removeEventListener('keydown', onKey);
+    clearInterval(clock);
 });
 
 /* ---- My notes (rich text, HTML): members persist to the server, guests to this device ---- */
@@ -230,7 +316,7 @@ const saveNote = () => {
                     <Icon name="play" /> Watch the message
                 </a>
 
-                <div ref="bodyEl" class="reader-body" @click="onBodyClick" v-html="renderedBody"></div>
+                <div ref="bodyEl" class="reader-body" @click="onBodyClick" @keydown="onBodyKey" v-html="renderedBody"></div>
                 <p class="tiny muted mt-16 flex" style="gap: 6px">
                     <Icon name="highlighter" /> Tip: tap any sentence to highlight, bookmark or copy it.
                 </p>
@@ -290,6 +376,39 @@ const saveNote = () => {
                 </Link>
             </nav>
         </div>
+
+        <!-- Fill-in-the-blank -->
+        <Modal v-if="fillPop" :title="revealed ? 'Your answer' : 'Fill in the blank'" width="420px" @close="closeFill">
+            <template v-if="!signedIn">
+                <p class="small">Sign in to fill in the blanks — your answers are saved to your account. The words are revealed {{ revealed ? 'now' : 'a day after the sermon' }}.</p>
+            </template>
+            <template v-else-if="revealed">
+                <div class="fill-compare">
+                    <div><span class="tiny muted">You wrote</span><b class="fill-compare-mine">{{ fillPop.mine }}</b></div>
+                    <div><span class="tiny muted">Actual</span><b class="fill-compare-actual">{{ fillPop.answer }}</b></div>
+                </div>
+                <p class="tiny muted mt-12">Keep your answer, or switch to the actual word.</p>
+            </template>
+            <form v-else id="fill-form" @submit.prevent="saveFill(fillDraft)">
+                <input ref="fillInput" v-model="fillDraft" class="fill-input" type="text" maxlength="255" autocomplete="off" placeholder="Type the missing word…" aria-label="Your answer" />
+                <p class="tiny muted mt-8">The actual word is revealed a day after the sermon.</p>
+            </form>
+            <template #footer>
+                <template v-if="!signedIn">
+                    <button class="btn btn-soft btn-sm" @click="closeFill">Not now</button>
+                    <a class="btn btn-primary btn-sm" :href="route('ui.fills.signin', s.id)">Sign in</a>
+                </template>
+                <template v-else-if="revealed">
+                    <button class="btn btn-soft btn-sm" @click="closeFill">Keep mine</button>
+                    <button class="btn btn-primary btn-sm" :disabled="fillSaving" @click="saveFill(fillPop.answer)">Use actual</button>
+                </template>
+                <template v-else>
+                    <button v-if="fillPop.mine" class="btn btn-soft btn-sm" :disabled="fillSaving" @click="saveFill('')">Clear</button>
+                    <span v-else></span>
+                    <button class="btn btn-primary btn-sm" type="submit" form="fill-form" :disabled="fillSaving || !fillDraft.trim()">{{ fillSaving ? 'Saving…' : 'Save' }}</button>
+                </template>
+            </template>
+        </Modal>
 
         <div v-if="active" class="hl-pop" :style="{ left: active.x + 'px', top: active.y + 'px' }">
             <button @click="toggleHighlight">

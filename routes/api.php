@@ -231,6 +231,9 @@ Route::group(["prefix"=>"1.3.5"],function (){
         Route::get('/get/{timestamp}', [API\V1_2\SermonController::class, 'getSermons']);
         Route::get('/view/{slug}', [API\V1_2\SermonController::class, 'show']);
         Route::get('/register-view/{slug}', [API\V1_3\SermonController::class, 'registerView']);
+        // Fill-in-the-blank answers (GET is public so guests learn the reveal time).
+        Route::get('/{slug}/fills', [API\V1_3\SermonFillController::class, 'index']);
+        Route::post('/{slug}/fills', [API\V1_3\SermonFillController::class, 'store'])->middleware('auth:sanctum');
         Route::get('/series/{slug}', [API\V1_2\SermonController::class, 'bySeries']);
         Route::get('/authors/{slug}', [API\V1_2\SermonController::class, 'getSermonsByAuthor']);
     });

@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use App\Support\Slug;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class SermonController extends Controller
@@ -77,6 +78,12 @@ class SermonController extends Controller
                 'videoUrl'    => $sermon->video_url,
                 'publishedAt' => Carbon::createFromTimestamp($sermon->published_at, config('app.timezone'))->format('Y-m-d\TH:i'),
                 'deleted'     => $sermon->trashed(),
+                // Fill-in-the-blank answers: shown 24h after publishing, or when revealed early.
+                'fills'       => [
+                    'count'      => count($sermon->fillKeys()),
+                    'revealAt'   => $sermon->fillsRevealAt() * 1000,
+                    'revealedEarly' => $sermon->fills_revealed_at !== null,
+                ],
             ],
             ...$this->lookups(),
         ]);
@@ -104,7 +111,16 @@ class SermonController extends Controller
         return back()->with('success', 'Sermon deleted');
     }
 
-    public function restore(Sermon $sermon)
+    /** Reveal a sermon's fill-in answers now, or go back to the automatic 24 hours. */
+    public function toggleFillsReveal(Sermon $sermon)
+    {
+        $reveal = $sermon->fills_revealed_at === null;
+        $sermon->forceFill(['fills_revealed_at' => $reveal ? now()->getTimestamp() : null])->saveQuietly();
+
+        return back()->with('success', $reveal ? 'Answers revealed' : 'Answers hidden until 24 hours after publishing');
+    }
+
+        public function restore(Sermon $sermon)
     {
         $sermon->restore();
 
@@ -130,13 +146,29 @@ class SermonController extends Controller
         return [
             'title'        => $v['title'],
             'subtitle'     => $v['subtitle'] ?? null,
-            'body'         => $v['body'],
+            'body'         => $this->uniqueFillIds($v['body']),
             'author_id'    => $v['authorId'],
             'series_id'    => $v['seriesId'] ?? null,
             'ministry_id'  => $v['ministryId'],
             'video_url'    => $v['videoUrl'] ?? null,
             'published_at' => Carbon::createFromFormat('Y-m-d\TH:i', $v['publishedAt'], config('app.timezone'))->getTimestamp(),
         ];
+    }
+
+    /** Copy-pasted blanks share an id (and would share answers); give repeats a new one. */
+    private function uniqueFillIds(string $body): string
+    {
+        $seen = [];
+
+        return preg_replace_callback('/(<mark\b[^>]*\bdata-fill=["\'])([a-z0-9]{4,16})(["\'])/i', function ($m) use (&$seen) {
+            $id = strtolower($m[2]);
+            while (isset($seen[$id])) {
+                $id = Str::lower(Str::random(6));
+            }
+            $seen[$id] = true;
+
+            return $m[1] . $id . $m[3];
+        }, $body);
     }
 
     private function lookups(): array

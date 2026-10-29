@@ -18,6 +18,7 @@ use App\Http\Controllers\Web\UI\PrayerController as UIPrayerController;
 use App\Http\Controllers\Web\UI\ProfileController as UIProfileController;
 use App\Http\Controllers\Web\UI\ResourceController as UIResourceController;
 use App\Http\Controllers\Web\UI\SermonController as UISermonController;
+use App\Http\Controllers\Web\UI\SermonFillController as UISermonFillController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/auth/{provider}/redirect', [AuthController::class, 'redirect'])->name('auth.provider');
@@ -63,6 +64,9 @@ Route::name('ui.')->group(function () use ($auth) {
     // Signed-in users (member profile not required).
     Route::middleware($auth)->group(function () {
         Route::post('/sermons/{sermon}/saves', [UIEngagementController::class, 'toggleSermonSave'])->name('sermons.saves');
+        Route::post('/sermons/{sermon}/fills', [UISermonFillController::class, 'store'])->name('fills.store');
+        // "Sign in to fill in the blanks": guests land on login, then come straight back to the sermon.
+        Route::get('/sermons/{sermon}/fill-in', [UISermonFillController::class, 'signin'])->name('fills.signin');
         Route::post('/events/{event}/response', [UIEngagementController::class, 'respondToEvent'])->name('events.respond');
         Route::post('/prayer/{prayer}/praying', [UIEngagementController::class, 'togglePraying'])->name('prayer.praying');
         Route::post('/notifications/read', [UIEngagementController::class, 'readNotifications'])->name('notifications.read');
@@ -134,6 +138,7 @@ Route::middleware([...$auth, 'role:admin,super'])->prefix('admin')->name('admin.
     Route::put('/sermons/{sermon}', [Admin\SermonController::class, 'update'])->withTrashed()->name('sermons.update');
     Route::delete('/sermons/{sermon}', [Admin\SermonController::class, 'destroy'])->name('sermons.destroy');
     Route::post('/sermons/{sermon}/restore', [Admin\SermonController::class, 'restore'])->withTrashed()->name('sermons.restore');
+    Route::post('/sermons/{sermon}/fills-reveal', [Admin\SermonController::class, 'toggleFillsReveal'])->withTrashed()->name('sermons.fills-reveal');
 
     Route::get('/series', [Admin\SeriesController::class, 'index'])->name('series.index');
     Route::post('/series', [Admin\SeriesController::class, 'store'])->name('series.store');

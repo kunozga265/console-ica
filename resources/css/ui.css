@@ -1277,3 +1277,22 @@
 .ica-ui .re-content img { max-width:100%; height:auto; border-radius:10px; margin:8px 0; display:block; }
 .ica-ui .re-content img.ProseMirror-selectednode { outline:3px solid var(--accent); }
 .ica-ui .reader-body img, .ica-ui .rich-text img { max-width:100%; height:auto; border-radius:12px; margin:12px 0; }
+
+/* ---- Fill-in-the-blank words in the editor ---- */
+.ica-ui .re-content mark.fill { background:color-mix(in srgb, #ffdd57 45%, transparent); color:inherit; padding:0 2px; border-radius:4px; border-bottom:2px dashed #c99a00; }
+
+/* ---- Fill-in-the-blanks in the sermon reader ---- */
+.ica-ui .reader-body mark[data-fill]:not(.fill-ready) { color:transparent; background:none; }
+.ica-ui .reader-body mark.fill-word { background:none; color:inherit; border-radius:4px; padding:0 2px; }
+.ica-ui .reader-body mark.fill-blank { display:inline-block; min-width:var(--len, 6ch); border-bottom:2px solid var(--ink-soft); cursor:pointer; line-height:1.1; }
+.ica-ui .reader-body mark.fill-blank:hover, .ica-ui .reader-body mark.fill-blank:focus-visible { background:color-mix(in srgb, var(--accent) 10%, transparent); outline:none; }
+.ica-ui .reader-body mark.fill-filled { color:var(--accent); border-bottom:2px dotted var(--accent); cursor:pointer; }
+.ica-ui .reader-body mark.fill-revealed { background:color-mix(in srgb, var(--success, #2f9d9d) 14%, transparent); }
+.ica-ui .reader-body mark.fill-correct { background:color-mix(in srgb, var(--success, #2f9d9d) 18%, transparent); box-shadow:inset 0 -2px 0 var(--success, #2f9d9d); }
+.ica-ui .reader-body mark.fill-mine { background:color-mix(in srgb, #f5a524 18%, transparent); box-shadow:inset 0 -2px 0 #f5a524; cursor:pointer; }
+.ica-ui .fill-input { width:100%; height:44px; padding:0 12px; border-radius:var(--radius-sm); border:1px solid var(--line); background:var(--surface-2); color:var(--ink); font-size:15px; }
+.ica-ui .fill-input:focus { outline:none; border-color:var(--accent); background:var(--surface); }
+.ica-ui .fill-compare { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.ica-ui .fill-compare > div { display:flex; flex-direction:column; gap:4px; padding:12px; border-radius:var(--radius-sm); background:var(--surface-2); }
+.ica-ui .fill-compare-mine { color:#b7791f; font-size:16px; }
+.ica-ui .fill-compare-actual { color:var(--success, #2f9d9d); font-size:16px; }

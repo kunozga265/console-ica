@@ -635,3 +635,6 @@
 .ica-admin .re-content a { color:var(--accent); text-decoration:underline; text-underline-offset:2px; }
 .ica-admin .re-content img { max-width:100%; height:auto; border-radius:10px; margin:8px 0; display:block; }
 .ica-admin .re-content img.ProseMirror-selectednode { outline:3px solid var(--accent); }
+
+/* ---- Fill-in-the-blank words in the editor ---- */
+.ica-admin .re-content mark.fill { background:color-mix(in srgb, #ffdd57 45%, transparent); color:inherit; padding:0 2px; border-radius:4px; border-bottom:2px dashed #c99a00; }

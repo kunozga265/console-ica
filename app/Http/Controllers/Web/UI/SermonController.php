@@ -10,6 +10,7 @@ use App\Models\Author;
 use App\Models\Ministry;
 use App\Models\Series;
 use App\Models\Sermon;
+use App\Support\SermonFills;
 use App\Support\SermonViews;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -121,6 +122,9 @@ class SermonController extends Controller
                 : [],
             'note'         => $isMember ? $sermon->notes()->where('user_id', $user->id)->first(['id', 'body']) : null,
             'canAnnotate'  => $isMember,
+            // Fill-in-the-blank: this user's answers, and when the real words show.
+            'fills'        => (object) SermonFills::forUser($user, $sermon),
+            'revealAt'     => $sermon->fillsRevealAt() * 1000,
             // The rest of this sermon's series, in preaching order.
             'inSeries'     => $sermon->series_id
                 ? SermonResource::collection($list()->where('series_id', $sermon->series_id)->whereKeyNot($sermon->id)

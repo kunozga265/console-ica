@@ -4,17 +4,20 @@ import { EditorContent, useEditor } from '@tiptap/vue-3';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import Image from '@tiptap/extension-image';
+import Fillable from '@/Components/UI/tiptap/Fillable';
 
 /*
  * WYSIWYG editor (Tiptap); v-model is HTML.
  * Links are always available. Images are enabled by passing `upload-url`
  * (an endpoint taking `image` and returning { url }) — they can be inserted
- * from the toolbar, pasted or dropped in.
+ * from the toolbar, pasted or dropped in. `fillables` adds a Blank button that
+ * marks words as fill-in-the-blanks (<mark data-fill>).
  */
 const props = defineProps({
     modelValue: { type: String, default: '' },
     placeholder: { type: String, default: 'Write here…' },
     uploadUrl: { type: String, default: null },
+    fillables: { type: Boolean, default: false },
 });
 const emit = defineEmits(['update:modelValue']);
 
@@ -31,6 +34,8 @@ const editor = useEditor({
         Placeholder.configure({ placeholder: props.placeholder }),
         // Always registered so existing <img> in bodies survive editing, even where uploads are off.
         Image.configure({ inline: false, allowBase64: false }),
+        // Likewise kept everywhere so blanks survive editing.
+        Fillable,
     ],
     editorProps: {
         attributes: { class: 'rich-text re-content' },
@@ -64,6 +69,14 @@ const tools = [
     { label: '“ Quote', title: 'Quote', name: 'blockquote', run: (c) => c.toggleBlockquote() },
 ];
 const use = (t) => t.run(editor.value.chain().focus()).run();
+
+/* ---- Fill-in-the-blank words ---- */
+const toggleBlank = () => {
+    error.value = '';
+    if (!editor.value.chain().focus().toggleFillable().run()) {
+        error.value = 'Select a word or short phrase within one sentence to make it a blank.';
+    }
+};
 
 /* ---- Links ---- */
 const linking = ref(false);
@@ -175,6 +188,7 @@ const onPicked = (e) => {
                 :style="t.style"
                 @click="use(t)"
             >{{ t.label }}</button>
+            <button v-if="fillables" type="button" title="Make the selected word a fill-in-the-blank" :class="{ on: editor.isActive('fillable') }" @click="toggleBlank">Blank</button>
             <button type="button" title="Link (paste a URL)" :class="{ on: editor.isActive('link') || linking }" @click="openLink">Link</button>
             <template v-if="uploadUrl">
                 <button type="button" title="Insert image (or paste / drop one in)" :disabled="uploading > 0" @click="pickImage">
