@@ -34,6 +34,9 @@ class AppController extends Controller
 {
 
     public $paginate = 20;
+
+    /** Upper bound for incremental (timestamp > 0) syncs. */
+    private const SYNC_LIMIT = 500;
     private int $count = 0;
 
 
@@ -91,10 +94,12 @@ class AppController extends Controller
             $events = Event::orderBy("start_date", "desc")->limit((new AppController())->paginate)->get();
             $authors = Author::all();
         } else {
-            $prayers = Prayer::where('date', '>', $timestamp)->orWhere('updated_at', '>', Carbon::createFromTimestamp($timestamp))->orderBy('date', 'desc')->limit((new AppController())->paginate)->get();
-            $sermons = Sermon::where('published_at', '>', $timestamp)->orWhere('updated_at', '>', Carbon::createFromTimestamp($timestamp))->orderBy("published_at", "desc")->limit((new AppController())->paginate)->get();
+            // Everything changed since the app's last sync (the app then moves its
+            // timestamp to now, so anything cut off here would never be sent).
+            $prayers = Prayer::where('date', '>', $timestamp)->orWhere('updated_at', '>', Carbon::createFromTimestamp($timestamp))->orderBy('date', 'desc')->limit(self::SYNC_LIMIT)->get();
+            $sermons = Sermon::where('published_at', '>', $timestamp)->orWhere('updated_at', '>', Carbon::createFromTimestamp($timestamp))->orderBy("published_at", "desc")->limit(self::SYNC_LIMIT)->get();
             $series = Series::where('updated_at', '>', Carbon::createFromTimestamp($timestamp))->where("first_sermon_date", "!=", null)->orderBy("first_sermon_date", "desc")->limit((new AppController())->paginate)->get();
-            $events = Event::where('start_date', '>', $timestamp)->orWhere('updated_at', '>', Carbon::createFromTimestamp($timestamp))->orderBy("start_date", "desc")->limit((new AppController())->paginate)->get();
+            $events = Event::where('start_date', '>', $timestamp)->orWhere('updated_at', '>', Carbon::createFromTimestamp($timestamp))->orderBy("start_date", "desc")->limit(self::SYNC_LIMIT)->get();
             $authors = Author::where('updated_at', '>', Carbon::createFromTimestamp($timestamp))->get();
         }
 

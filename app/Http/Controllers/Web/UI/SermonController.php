@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Web\UI;
 
+use App\Support\QuillDelta;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UI\AuthorResource;
 use App\Http\Resources\UI\SeriesResource;
@@ -120,7 +121,10 @@ class SermonController extends Controller
                 ? $sermon->bookmarks()->where('user_id', $user->id)->get(['id', 'caption_id'])
                     ->map(fn ($b) => ['id' => $b->id, 'spanId' => intval($b->caption_id)])->values()
                 : [],
-            'note'         => $isMember ? $sermon->notes()->where('user_id', $user->id)->first(['id', 'body']) : null,
+            // Notes are stored as Quill Delta (the mobile app's editor); the web editor works in HTML.
+            'note'         => $isMember && ($note = $sermon->notes()->where('user_id', $user->id)->first(['id', 'body']))
+                ? ['id' => $note->id, 'body' => QuillDelta::toHtml($note->body)]
+                : null,
             'canAnnotate'  => $isMember,
             // Fill-in-the-blank: this user's answers, and when the real words show.
             'fills'        => (object) SermonFills::forUser($user, $sermon),

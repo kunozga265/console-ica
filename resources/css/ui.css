@@ -868,6 +868,9 @@
 .ica-ui .reader-body a.body-link:hover { text-decoration-thickness:2px; }
 .ica-ui .reader-body strong, .ica-ui .reader-body b { color:var(--ink); font-weight:600; }
 .ica-ui .reader-body ul, .ica-ui .reader-body ol { padding-left:22px; margin-bottom:18px; list-style:revert; }
+/* Numbered sub-points read a), b), c) — ol > li > ol > li */
+.ica-ui .reader-body ol ol { list-style-type:lower-alpha; margin-bottom:6px; }
+.ica-ui .reader-body ol ol > li::marker { content:counter(list-item, lower-alpha) ") "; }
 .ica-ui .reader-body li { margin-bottom:6px; }
 .ica-ui .reader .video iframe { width:100%; height:100%; border:0; border-radius:var(--radius); }
 .ica-ui .reader .video { overflow:hidden; }

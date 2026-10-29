@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Http\Controllers\Web\HelperController;
+use App\Support\SermonBody;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -88,7 +89,7 @@ class Sermon extends Model
 
     public function refactorBody()
     {
-        return (new HelperController())->generateHighlightLinks($this->body);
+        return (new HelperController())->generateHighlightLinks(SermonBody::normalizeLists($this->body));
     }
 
     protected $fillable=[

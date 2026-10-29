@@ -239,8 +239,14 @@ const readLocalNote = () => {
     }
 };
 const savedNote = ref(props.canAnnotate ? (props.note?.body ?? '') : readLocalNote());
-watch(() => props.note, (n) => props.canAnnotate && (savedNote.value = n?.body ?? ''));
 const draft = ref(savedNote.value);
+// The server stores notes as Quill Delta (shared with the mobile app) and sends back
+// HTML regenerated from it, so adopt that as both the saved copy and the draft.
+watch(() => props.note, (n) => {
+    if (!props.canAnnotate) return;
+    savedNote.value = n?.body ?? '';
+    draft.value = savedNote.value;
+});
 const saving = ref(false);
 const dirty = computed(() => draft.value !== savedNote.value);
 
@@ -328,7 +334,7 @@ const saveNote = () => {
                     <div class="spacer"></div>
                     <span class="tiny muted">Private to you</span>
                 </div>
-                <RichEditor v-model="draft" placeholder="Write what God is saying to you through this message…" />
+                <RichEditor v-model="draft" placeholder="Write what God is saying to you through this message…" preserve-whitespace />
                 <div class="between mt-8">
                     <span v-if="!canAnnotate" class="tiny muted">
                         Saved on this device · <a :href="route('login')"

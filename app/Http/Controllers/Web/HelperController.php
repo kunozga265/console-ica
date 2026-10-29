@@ -11,6 +11,9 @@ use Illuminate\Http\Request;
 class HelperController extends Controller
 {
     private int $count = 0;
+
+    /** Reproduce the pre-fix splitting at HTML entities (used to remap saved highlights). */
+    public bool $legacyEntitySplit = false;
     
     public function filterBody($body, $initial_entry = false)
     {
@@ -110,6 +113,8 @@ class HelperController extends Controller
         // correct list spans
         $body = json_decode(str_replace('\r\n\t<ul>', '\r\n\t<\/a><\/span><ul>', json_encode($body)));
         $body = json_decode(str_replace('<\/ul><\/a><\/span><\/li>', '<\/ul><\/li>', json_encode($body)));
+        $body = json_decode(str_replace('\r\n\t<ol>', '\r\n\t<\/a><\/span><ol>', json_encode($body)));
+        $body = json_decode(str_replace('<\/ol><\/a><\/span><\/li>', '<\/ol><\/li>', json_encode($body)));
 
         //splits sentences and adds spans
         //those with periods
@@ -119,6 +124,10 @@ class HelperController extends Controller
 
         //gives spans ids
         $body = json_decode(preg_replace_callback('/<(span+)(?![^>]*\/>)[^>]*>/', array($this, 'giveSpanIds'), json_encode($body)));
+
+        // A nested list's parent sentence is already closed before the list; drop the
+        // duplicate closers left after it when whitespace separates </ul|ol> and </li>.
+        $body = preg_replace('#</(ul|ol)>(\s*)</a></span></li>#', '</$1>$2</li>', $body);
 
         return $body;
     }
@@ -134,6 +143,12 @@ class HelperController extends Controller
     }
     public function splitSentecesWithColon($matches)
     {
+        // "&rdquo; He said" / "Death &amp; Resurrection": the ";" ends an HTML entity,
+        // not a sentence. Splitting there printed "&;" and cut the sentence in two.
+        if (! $this->legacyEntitySplit && preg_match('/&#?[A-Za-z0-9]+$/', $matches[1])) {
+            return $matches[0];
+        }
+
         return " $matches[1]<\/a><\/span>; <span>$matches[2]";
     }
 }

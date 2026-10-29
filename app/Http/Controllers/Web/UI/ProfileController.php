@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Web\UI;
 
+use App\Support\QuillDelta;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UI\SermonResource;
 use App\Models\Attendance;
@@ -51,7 +52,8 @@ class ProfileController extends Controller
                 'id'          => $n->id,
                 'sermonId'    => intval($n->sermon_id),
                 'sermonTitle' => $noteTitles[$n->sermon_id] ?? 'Sermon',
-                'body'        => $n->body,
+                // Stored as Quill Delta (mobile app); the site shows HTML.
+                'body'        => QuillDelta::toHtml($n->body),
                 'date'        => ($n->updated_at ?? $n->created_at)?->getTimestamp() * 1000,
             ])->values(),
             'saved'     => $sermonsFor('saved'),

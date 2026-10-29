@@ -5,6 +5,8 @@ import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import Image from '@tiptap/extension-image';
 import Fillable from '@/Components/UI/tiptap/Fillable';
+import Indent from '@/Components/UI/tiptap/Indent';
+import { BackgroundColor, Color, TextStyle } from '@tiptap/extension-text-style';
 
 /*
  * WYSIWYG editor (Tiptap); v-model is HTML.
@@ -18,17 +20,24 @@ const props = defineProps({
     placeholder: { type: String, default: 'Write here…' },
     uploadUrl: { type: String, default: null },
     fillables: { type: Boolean, default: false },
+    // Keep spaces exactly (notes round-trip to the mobile app's editor); off for sermon
+    // bodies, whose old HTML has formatting whitespace between tags.
+    preserveWhitespace: { type: Boolean, default: false },
 });
 const emit = defineEmits(['update:modelValue']);
 
 const uploading = ref(0);
 const error = ref('');
 
+const parseOptions = props.preserveWhitespace ? { preserveWhitespace: true } : {};
+
 const editor = useEditor({
     content: props.modelValue,
+    parseOptions,
     extensions: [
         StarterKit.configure({
-            heading: { levels: [2, 3] },
+            // H1 is kept for notes written in the mobile app; the toolbar offers H2/H3.
+            heading: { levels: [1, 2, 3] },
             link: { openOnClick: false, autolink: true, linkOnPaste: true, defaultProtocol: 'https' },
         }),
         Placeholder.configure({ placeholder: props.placeholder }),
@@ -36,6 +45,11 @@ const editor = useEditor({
         Image.configure({ inline: false, allowBase64: false }),
         // Likewise kept everywhere so blanks survive editing.
         Fillable,
+        // Text colour / highlight and indents from notes written in the mobile app.
+        TextStyle,
+        Color,
+        BackgroundColor,
+        Indent,
     ],
     editorProps: {
         attributes: { class: 'rich-text re-content' },
@@ -52,7 +66,7 @@ const editor = useEditor({
 
 watch(() => props.modelValue, (value) => {
     if (editor.value && value !== (editor.value.isEmpty ? '' : editor.value.getHTML())) {
-        editor.value.commands.setContent(value || '', { emitUpdate: false });
+        editor.value.commands.setContent(value || '', { emitUpdate: false, parseOptions });
     }
 });
 

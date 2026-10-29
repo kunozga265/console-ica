@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Web;
 
+use App\Support\QuillDelta;
 use App\Http\Controllers\Controller;
 use App\Models\Bookmark;
 use App\Models\Highlight;
@@ -89,7 +90,8 @@ class AnnotationController extends Controller
                 "user_id" => Auth::id(),
             ],
             [
-                "body" => $validated["body"],
+                // Store as Quill Delta so the mobile app can open it.
+                "body" => QuillDelta::fromHtml($validated["body"]),
                 "date" => now()->getTimestamp(),
             ]
         );
