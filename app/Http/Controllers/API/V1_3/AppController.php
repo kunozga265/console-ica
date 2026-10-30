@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API\V1_3;
 
+use App\Support\AnnotationSync;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Web\UsageController;
 use App\Http\Controllers\Web\AppController as WebAppController;
@@ -168,75 +169,20 @@ class AppController extends Controller
 
     public function syncData(Request $request)
     {
-        $request->validate([]);
+        $userId = Auth::id();
 
-
-        //highlights
-        foreach ($request->input("highlights.latest") ?? [] as $highlight) {
-            if (!Highlight::where("sermon_id", $highlight["sermonId"])->where("highlight_id", $highlight["highlightId"])->exists()) {
-                Highlight::create([
-                    "sermon_id" => $highlight["sermonId"],
-                    "highlight_id" => $highlight["highlightId"],
-                    "date" => $highlight["date"],
-                    "user_id" => Auth::id(),
-                ]);
-            }
+        // All writes are per user and idempotent (App\Support\AnnotationSync).
+        foreach ($request->input("highlights.latest") ?? [] as $h) {
+            AnnotationSync::highlight($userId, $h["sermonId"], $h["highlightId"], $h["date"] ?? null);
         }
-
-        foreach ($request->input("highlights.trashed") ?? [] as $highlight) {
-            $highlight = Highlight::where("sermon_id", $highlight["sermonId"])->where("highlight_id", $highlight["highlightId"])->first();
-            if (is_object($highlight)) {
-                $highlight->delete();
-            }
+        foreach ($request->input("highlights.trashed") ?? [] as $h) {
+            AnnotationSync::unhighlight($userId, $h["sermonId"], $h["highlightId"]);
         }
-
-        //bookmarks
-        foreach ($request->bookmarks ?? [] as $bookmark) {
-
-            $existingBookmark = Bookmark::where("sermon_id", $bookmark["sermonId"])
-                ->where("user_id", Auth::id())
-                ->where("caption_id", $bookmark["captionId"])
-                ->first();
-
-            if (is_object($existingBookmark)) {
-                $existingBookmark->update([
-                    "sermon_id" => $bookmark["sermonId"],
-                    "caption" => $bookmark["caption"],
-                    "caption_id" => $bookmark["captionId"],
-                    "date" => $bookmark["date"],
-                    "comment" => $bookmark["comment"],
-                    "user_id" => Auth::id(),
-                ]);
-            } else {
-                Bookmark::create([
-                    "sermon_id" => $bookmark["sermonId"],
-                    "caption" => $bookmark["caption"],
-                    "caption_id" => $bookmark["captionId"],
-                    "date" => $bookmark["date"],
-                    "comment" => $bookmark["comment"],
-                    "user_id" => Auth::id(),
-                ]);
-            }
+        foreach ($request->bookmarks ?? [] as $b) {
+            AnnotationSync::bookmark($userId, $b["sermonId"], $b["captionId"], $b["caption"] ?? null, $b["date"] ?? null, $b["comment"] ?? null);
         }
-
-        //notes
-        foreach ($request->notes ?? [] as $note) {
-            $_note = Note::where("sermon_id", $note["sermonId"])->where("user_id", Auth::id())->first();
-            if (is_object($_note)) {
-                $_note->update([
-                    "sermon_id" => $note["sermonId"],
-                    "body" => $note["body"],
-                    "date" => $note["date"],
-                    "user_id" => Auth::id(),
-                ]);
-            } else {
-                Note::create([
-                    "sermon_id" => $note["sermonId"],
-                    "body" => $note["body"],
-                    "date" => $note["date"],
-                    "user_id" => Auth::id(),
-                ]);
-            }
+        foreach ($request->notes ?? [] as $n) {
+            AnnotationSync::note($userId, $n["sermonId"], $n["body"] ?? null, $n["date"] ?? null);
         }
 
         return response()->json(["message" => "Successfully synced data"]);
@@ -249,32 +195,28 @@ class AppController extends Controller
         ]);
         $user = User::find(Auth::id());
 
-        if (isset($request->note_id)) {
-            $note = $user->notes()->where("sermon_id", $request->sermon_id)->first();
-
-            if (is_object($note)) {
-                $note->delete();
-                return response()->json(["message" => "Successfully deleted!"], 200);
-            } else {
-                //if not found
-                return response()->json(["message" => "Note not found!"], 404);
-            }
-        }
-
-        if (isset($request->caption_id)) {
-            $bookmark = $user->bookmarks()
+        // Bookmarks first: app versions up to 1.3.x send note_id (= sermon id) on every
+        // delete, so checking note_id first deleted the sermon's note instead of the bookmark.
+        if ($request->filled("caption_id")) {
+            $deleted = $user->bookmarks()
                 ->where("sermon_id", $request->sermon_id)
                 ->where("caption_id", $request->caption_id)
-                ->first();
+                ->delete();
 
-            if (is_object($bookmark)) {
-                $bookmark->delete();
-                return response()->json(["message" => "Successfully deleted!"], 200);
-            } else {
-                //if not found
-                return response()->json(["message" => "Bookmark not found!"], 404);
-            }
+            return $deleted
+                ? response()->json(["message" => "Successfully deleted!"], 200)
+                : response()->json(["message" => "Bookmark not found!"], 404);
         }
+
+        if ($request->filled("note_id")) {
+            $deleted = $user->notes()->where("sermon_id", $request->sermon_id)->delete();
+
+            return $deleted
+                ? response()->json(["message" => "Successfully deleted!"], 200)
+                : response()->json(["message" => "Note not found!"], 404);
+        }
+
+        return response()->json(["message" => "Nothing to delete"], 422);
     }
 
     public function generateHighlightLinks($body)

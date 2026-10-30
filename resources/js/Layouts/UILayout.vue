@@ -33,6 +33,8 @@ const props = defineProps({
 const inertia = usePage();
 const user = computed(() => inertia.props.auth?.user ?? null);
 const isAdmin = computed(() => !!inertia.props.isAdmin);
+// Attendance sheets are for the registers scope.
+const canRegisters = computed(() => (inertia.props.scopes ?? []).includes('registers'));
 
 const NAV = [
     { id: 'dashboard', name: 'Dashboard', icon: 'grid', route: 'ui.dashboard' },
@@ -44,7 +46,7 @@ const NAV = [
 // "More" group; Attendance Sheets is admin-only.
 const MORE = computed(() =>
     [
-        isAdmin.value && { id: 'attendance', name: 'Attendance Sheets', icon: 'check', route: 'ui.attendance' },
+        canRegisters.value && { id: 'attendance', name: 'Attendance Sheets', icon: 'check', route: 'ui.attendance' },
         { id: 'resources', name: 'Resources', icon: 'folder', route: 'ui.resources' },
         { id: 'about', name: 'About', icon: 'info', route: 'ui.about' },
     ].filter(Boolean),
@@ -260,7 +262,7 @@ onBeforeUnmount(() => {
                                 <span v-if="svc.checked" class="badge badge-green"><Icon name="check" /> Present</span>
                                 <button v-else class="btn btn-ghost btn-sm" :disabled="checkingIn === svc.id" @click="checkIn(svc)">Check in</button>
                             </div>
-                            <Link v-if="isAdmin" :href="route('ui.attendance')" class="foot">All attendance sheets →</Link>
+                            <Link v-if="canRegisters" :href="route('ui.attendance')" class="foot">All attendance sheets →</Link>
                         </div>
                     </div>
 

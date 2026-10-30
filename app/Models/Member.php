@@ -40,6 +40,12 @@ class Member extends Model
         return $this->belongsTo(Cell::class);
     }
 
+    /** Pastoral follow-ups (visitors), newest first. */
+    public function followUps()
+    {
+        return $this->hasMany(VisitorFollowUp::class)->orderByDesc('date')->orderByDesc('id');
+    }
+
     public function isAdmin()
     {
         foreach ($this->users as $user) {
@@ -93,6 +99,8 @@ class Member extends Model
     }
 
     protected $fillable = [
+        "guardian_name",
+        "guardian_phone",
         "code",
         "avatar",
         "first_name",

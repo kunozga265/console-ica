@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'role' => \App\Http\Middleware\EnsureUserHasRole::class,
+            'scope' => \App\Http\Middleware\EnsureUserHasScope::class,
             'has.member' => \App\Http\Middleware\EnsureUserHasMember::class,
         ]);
     })

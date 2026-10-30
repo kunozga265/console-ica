@@ -2,16 +2,21 @@
 
 namespace App\Models;
 
+use App\Support\Scopes;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
     use HasFactory, Notifiable, HasApiTokens, SoftDeletes;
+
+    /** @var array<int, string>|null */
+    private ?array $scopeCache = null;
 
     public function roles()
     {
@@ -73,6 +78,48 @@ class User extends Authenticatable
             return true;
         }
         return false;
+    }
+
+    public function isSuper(): bool
+    {
+        return $this->roles->contains('name', 'super');
+    }
+
+    /** Scopes this user may manage (App\Support\Scopes); super users have all of them. */
+    public function scopes(): array
+    {
+        if ($this->isSuper()) {
+            return Scopes::keys();
+        }
+
+        return $this->scopeCache ??= array_values(array_intersect(
+            Scopes::keys(),
+            DB::table('user_scopes')->where('user_id', $this->id)->pluck('scope')->all()
+        ));
+    }
+
+    public function hasScope(string $scope): bool
+    {
+        return in_array($scope, $this->scopes(), true);
+    }
+
+    public function hasAnyScope(string ...$scopes): bool
+    {
+        return $scopes ? (bool) array_intersect($scopes, $this->scopes()) : $this->scopes() !== [];
+    }
+
+    /** Replaces the user's scopes (and bumps updated_at so the app's sync sends them). */
+    public function syncScopes(array $scopes): void
+    {
+        $scopes = array_values(array_intersect(Scopes::keys(), $scopes));
+        DB::transaction(function () use ($scopes) {
+            DB::table('user_scopes')->where('user_id', $this->id)->whereNotIn('scope', $scopes)->delete();
+            foreach ($scopes as $scope) {
+                DB::table('user_scopes')->insertOrIgnore(['user_id' => $this->id, 'scope' => $scope, 'created_at' => now(), 'updated_at' => now()]);
+            }
+            $this->touch();
+        });
+        $this->scopeCache = null;
     }
 
 

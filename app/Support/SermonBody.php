@@ -23,4 +23,20 @@ class SermonBody
             (string) $html
         );
     }
+
+    /**
+     * For previews (e.g. the home page excerpt): fill-in-the-blank words must not
+     * give away the answer before the reveal, so they become empty gaps; after
+     * it they read as ordinary text.
+     */
+    public static function concealFills(?string $html, bool $revealed): string
+    {
+        return (string) preg_replace_callback(
+            '#<mark\b[^>]*\bdata-fill=["\'][^"\']*["\'][^>]*>(.*?)</mark>#is',
+            fn ($m) => $revealed
+                ? $m[1]
+                : '<span class="fill-gap" aria-label="blank">' . str_repeat('&nbsp;', max(4, min(24, mb_strlen(strip_tags($m[1]))))) . '</span>',
+            (string) $html
+        );
+    }
 }

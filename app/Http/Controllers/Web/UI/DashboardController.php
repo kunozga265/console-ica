@@ -9,6 +9,8 @@ use App\Http\Resources\UI\PrayerResource;
 use App\Http\Resources\UI\SermonResource;
 use App\Models\Event;
 use App\Models\Member;
+use App\Support\Birthdays;
+use App\Support\SermonBody;
 use App\Models\Page;
 use App\Models\Prayer;
 use App\Models\Sermon;
@@ -32,7 +34,11 @@ class DashboardController extends Controller
             ->orderByRaw('published_at DESC, created_at DESC')
             ->limit(self::LIMIT)
             ->get();
-        $sermons->first()?->setAttribute('body', Sermon::whereKey($sermons->first()->id)->value('body'));
+        if ($featured = $sermons->first()) {
+            $full = Sermon::whereKey($featured->id)->first(['id', 'body', 'published_at', 'fills_revealed_at']);
+            // Keep fill-in-the-blank answers hidden in the excerpt until they're revealed.
+            $featured->setAttribute('body', SermonBody::concealFills($full->body, $full->fillsRevealAt() <= $now));
+        }
 
         // Most recent first, up to and including today's.
         $prayerPoints = Prayer::where('date', '<', Carbon::tomorrow()->getTimestamp())
@@ -80,29 +86,7 @@ class DashboardController extends Controller
      */
     private function birthdaysThisWeek(): array
     {
-        $tz = config('app.timezone');
-        $week = [];
-        foreach (CarbonPeriod::create(Carbon::now($tz)->startOfWeek(), Carbon::now($tz)->endOfWeek()) as $day) {
-            $week[$day->format('m-d')] = $day->copy()->startOfDay();
-        }
-
-        return Member::with('cell')
-            ->whereNotNull('date_of_birth')
-            ->get(['id', 'first_name', 'last_name', 'avatar', 'date_of_birth', 'cell_id'])
-            ->map(function (Member $member) use ($week, $tz) {
-                $key = Carbon::createFromTimestamp($member->date_of_birth, $tz)->format('m-d');
-
-                return isset($week[$key]) ? [
-                    'id'     => intval($member->id),
-                    'name'   => $member->fullName(),
-                    'avatar' => $member->avatar,
-                    'cell'   => $member->cell?->name,
-                    'date'   => $week[$key]->getTimestamp() * 1000,
-                ] : null;
-            })
-            ->filter()
-            ->sortBy('date')
-            ->values()
-            ->all();
+        // Shared with the app (API 1.4 dashboard); the web uses milliseconds.
+        return array_map(fn ($b) => ['date' => $b['date'] * 1000] + $b, Birthdays::thisWeek());
     }
 }

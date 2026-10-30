@@ -36,8 +36,22 @@ const form = reactive({
     email: p.email ?? '',
     dateOfBirth: p.dateOfBirth ?? '',
     cellId: p.cellId ?? '',
+    guardianName: p.guardianName ?? '',
+    guardianPhone: p.guardianPhone ?? '',
 });
 const full = computed(() => form.isRegistered);
+
+// Children and teenagers (18 or under) don't need their own phone or email;
+// they can have a guardian contact instead (same rule as the server).
+const minor = computed(() => {
+    if (!form.dateOfBirth) return false;
+    const dob = new Date(`${form.dateOfBirth}T00:00:00`);
+    const now = new Date();
+    let age = now.getFullYear() - dob.getFullYear();
+    if (now.getMonth() < dob.getMonth() || (now.getMonth() === dob.getMonth() && now.getDate() < dob.getDate())) age--;
+    return dob < now && age <= 18;
+});
+const contactRequired = computed(() => full.value && !minor.value);
 
 const title = computed(() =>
     props.mode === 'register' ? `Register ${p.name} as a member` : props.mode === 'edit' ? `Edit ${p.name}` : form.isRegistered ? 'Add member' : 'Add visitor',
@@ -97,12 +111,16 @@ const firstError = computed(() => Object.values(errors.value)[0]);
                     <option>Female</option>
                 </select>
             </label>
-            <label class="field"><span>Airtel number{{ full ? ' *' : '' }}</span><input v-model="form.phoneNumberAirtel" type="tel" placeholder="099…" /></label>
+            <label class="field"><span>Date of birth</span><input v-model="form.dateOfBirth" type="date" /></label>
+            <label class="field"><span>Airtel number{{ contactRequired ? ' *' : '' }}</span><input v-model="form.phoneNumberAirtel" type="tel" placeholder="099…" /></label>
             <label v-if="full" class="field"><span>TNM number</span><input v-model="form.phoneNumberTnm" type="tel" placeholder="088…" /></label>
             <label v-if="full" class="field"><span>International number</span><input v-model="form.phoneNumberInternational" type="tel" placeholder="+44…" /></label>
             <label class="field"><span>Email</span><input v-model="form.email" type="email" autocomplete="email" /></label>
+            <template v-if="minor">
+                <label class="field"><span>Guardian’s name</span><input v-model="form.guardianName" type="text" autocomplete="off" /></label>
+                <label class="field"><span>Guardian’s phone</span><input v-model="form.guardianPhone" type="tel" placeholder="099…" /></label>
+            </template>
             <template v-if="full">
-                <label class="field"><span>Date of birth</span><input v-model="form.dateOfBirth" type="date" /></label>
                 <label class="field">
                     <span>Cell</span>
                     <select v-model="form.cellId">
@@ -112,7 +130,8 @@ const firstError = computed(() => Object.values(errors.value)[0]);
                 </label>
             </template>
         </div>
-        <p v-if="full" class="tiny muted mt-8">* Full members need at least one phone number or an email.</p>
+        <p v-if="contactRequired" class="tiny muted mt-8">* Full members need at least one phone number or an email (not needed for anyone 18 or under).</p>
+        <p v-else-if="minor" class="tiny muted mt-8">18 or under — their own phone or email isn’t needed; add a guardian contact if you have one.</p>
         <p v-if="firstError" class="small mt-8" style="color: var(--danger)">{{ firstError }}</p>
 
         <template #footer>

@@ -7,6 +7,7 @@ use App\Models\Attendance;
 use App\Models\Cell;
 use App\Models\CellJoinRequest;
 use App\Models\User;
+use App\Models\VisitorFollowUp;
 use Illuminate\Support\Facades\DB;
 use App\Models\Member;
 use Carbon\Carbon;
@@ -40,26 +41,7 @@ class MemberController extends Controller
             ->paginate(self::PER_PAGE)->withQueryString();
 
         return Inertia::render('Admin/Members', [
-            'people' => collect($page->items())->map(fn (Member $m) => [
-                'id'           => $m->id,
-                'code'         => $m->code,
-                'name'         => $m->fullName(),
-                'firstName'    => $m->first_name,
-                'middleName'   => $m->middle_name,
-                'lastName'     => $m->last_name,
-                'gender'       => $m->gender,
-                'email'        => $m->email,
-                'avatar'       => $m->avatar,
-                'phoneNumberAirtel'        => $m->phone_number_airtel,
-                'phoneNumberTnm'           => $m->phone_number_tnm,
-                'phoneNumberInternational' => $m->phone_number_international,
-                'dateOfBirth'  => $m->date_of_birth ? Carbon::createFromTimestamp($m->date_of_birth, $tz)->format('Y-m-d') : null,
-                'cellId'       => $m->cell_id ? intval($m->cell_id) : null,
-                'cell'         => $m->cell?->name,
-                'leads'        => $m->leadershipCell?->name,
-                'isRegistered' => (bool) $m->is_registered,
-                'joined'       => $m->created_at?->getTimestamp() * 1000,
-            ]),
+            'people' => collect($page->items())->map(fn (Member $m) => self::person($m)),
             'paging'  => ['page' => $page->currentPage(), 'lastPage' => $page->lastPage(), 'total' => $page->total(), 'from' => $page->firstItem(), 'to' => $page->lastItem()],
             'filters' => (object) $filters,
             'stats'   => [
@@ -82,10 +64,40 @@ class MemberController extends Controller
         DB::transaction(function () use ($member) {
             Attendance::where('member_id', $member->id)->delete();
             CellJoinRequest::where('member_id', $member->id)->delete();
+            VisitorFollowUp::where('member_id', $member->id)->delete();
             User::where('member_id', $member->id)->update(['member_id' => null]);
             $member->delete();
         });
 
         return back()->with('success', "{$member->fullName()} removed");
+    }
+
+    /** A person as PersonForm and the admin lists expect it (also used by the Visitors page). */
+    public static function person(Member $m): array
+    {
+        $tz = config('app.timezone');
+
+        return [
+            'id'           => $m->id,
+            'code'         => $m->code,
+            'name'         => $m->fullName(),
+            'firstName'    => $m->first_name,
+            'middleName'   => $m->middle_name,
+            'lastName'     => $m->last_name,
+            'gender'       => $m->gender,
+            'email'        => $m->email,
+            'avatar'       => $m->avatar,
+            'phoneNumberAirtel'        => $m->phone_number_airtel,
+            'phoneNumberTnm'           => $m->phone_number_tnm,
+            'phoneNumberInternational' => $m->phone_number_international,
+            'dateOfBirth'  => $m->date_of_birth ? Carbon::createFromTimestamp($m->date_of_birth, $tz)->format('Y-m-d') : null,
+            'cellId'       => $m->cell_id ? intval($m->cell_id) : null,
+            'cell'         => $m->cell?->name,
+            'leads'        => $m->leadershipCell?->name,
+            'isRegistered' => (bool) $m->is_registered,
+            'guardianName' => $m->guardian_name,
+            'guardianPhone' => $m->guardian_phone,
+            'joined'       => $m->created_at?->getTimestamp() * 1000,
+        ];
     }
 }

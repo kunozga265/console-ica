@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API\V1_2;
 
+use App\Support\AnnotationSync;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\HighlightResource;
 use App\Models\Highlight;
@@ -19,26 +20,13 @@ class HighlightController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $userId = Auth::id();
 
-        ]);
-
-        foreach ($request->latest ?? [] as $highlight){
-            if(!Highlight::where("sermon_id",$highlight["sermon_id"])->where("highlight_id", $highlight["highlight_id"])->exists()){
-                Highlight::create([
-                    "sermon_id" => $highlight["sermon_id"],
-                    "highlight_id" => $highlight["highlight_id"],
-                    "date" => $highlight["date"],
-                    "user_id" => Auth::id(),
-                ]);
-            }
+        foreach ($request->latest ?? [] as $h) {
+            AnnotationSync::highlight($userId, $h["sermon_id"], $h["highlight_id"], $h["date"] ?? null);
         }
-
-        foreach ($request->trashed ?? [] as $highlight){
-            $highlight = Highlight::where("sermon_id",$highlight["sermon_id"])->where("highlight_id", $highlight["highlight_id"])->first();
-            if(is_object($highlight)){
-                $highlight->delete();
-            }
+        foreach ($request->trashed ?? [] as $h) {
+            AnnotationSync::unhighlight($userId, $h["sermon_id"], $h["highlight_id"]);
         }
 
         return response()->json(["message"=>"Successfully synced highlights"]);

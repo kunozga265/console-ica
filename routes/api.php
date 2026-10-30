@@ -306,6 +306,120 @@ Route::group(["prefix"=>"1.3.5"],function (){
 });
 
 /*
+| API 1.4 — 1.3.5 plus scopes (App\Support\Scopes): registers need the
+| registers scope, member management is authorised per record
+| (App\Support\MemberAccess). Adds /members/me, visitors at a register,
+| birthdays on the dashboard and "I'm praying". 1.3.5 and earlier are
+| unchanged for installed apps.
+*/
+Route::group(["prefix"=>"1.4"],function (){
+
+    /* Home Page */
+    Route::get('/initiate',[API\V1_1\AppController::class, 'initiate']);
+    Route::get('/dashboard/{timestamp}',[API\V1_4\AppController::class, 'dashboard']);
+    Route::get('/search/{query}', [API\V1_1\AppController::class, 'search']);
+
+    /* Sermons */
+    Route::group(["prefix"=>"sermons"],function () {
+        Route::get('/', [API\V1_2\SermonController::class, 'index']);
+        Route::get('/get/{timestamp}', [API\V1_2\SermonController::class, 'getSermons']);
+        Route::get('/view/{slug}', [API\V1_2\SermonController::class, 'show']);
+        Route::get('/register-view/{slug}', [API\V1_3\SermonController::class, 'registerView']);
+        // Fill-in-the-blank answers (GET is public so guests learn the reveal time).
+        Route::get('/{slug}/fills', [API\V1_3\SermonFillController::class, 'index']);
+        Route::post('/{slug}/fills', [API\V1_3\SermonFillController::class, 'store'])->middleware('auth:sanctum');
+        Route::get('/series/{slug}', [API\V1_2\SermonController::class, 'bySeries']);
+        Route::get('/authors/{slug}', [API\V1_2\SermonController::class, 'getSermonsByAuthor']);
+    });
+
+    Route::post('/users/login', [API\V1_3\UserController::class, 'login']);
+    Route::post('/users/confirm', [API\V1_3\UserController::class, 'confirm']);
+
+    Route::group(["prefix"=>"cells", "middleware"=>"auth:sanctum"], function (){
+        Route::get('/{code}/get', [API\V1_2\CellController::class, 'show']);
+        Route::get('/unverified', [API\V1_2\CellController::class, 'unverified']);
+        Route::post('/', [\App\Http\Controllers\Web\CellController::class, 'store']);
+        Route::post('/verify', [\App\Http\Controllers\Web\CellController::class, 'verify']);
+        Route::post('/meetings', [API\V1_2\MeetingController::class, 'store']); // legacy pointed at Web store, which needs a {code} this route lacks
+        Route::post('/attach-members/{code}', [API\V1_2\CellController::class, 'attachMembers']);
+        Route::post('/update/{code}', [API\V1_2\CellController::class, 'update']);
+    });
+
+    Route::group(["prefix"=>"meetings", "middleware"=>"auth:sanctum"], function (){
+        Route::post('/', [\App\Http\Controllers\Web\MeetingController::class, 'store']);
+        Route::post('/{code}', [API\V1_2\MeetingController::class, 'update']);
+    });
+
+    Route::group(["prefix"=>"meetings", "middleware"=>"auth:sanctum"], function (){
+        Route::post('/', [API\V1_2\MeetingController::class, 'store']);
+        Route::post('/{code}', [API\V1_2\MeetingController::class, 'update']);
+    });
+
+    Route::group(["prefix"=>"ministries", "middleware"=>"auth:sanctum"], function (){
+        Route::get('/', [API\V1_3\MinistryController::class, 'index']);
+        Route::get('/show/{id}', [API\V1_3\MinistryController::class, 'show']);
+    });
+
+    Route::group(["prefix"=>"members", "middleware"=>"auth:sanctum"], function (){
+        Route::get('/', [API\V1_4\MemberController::class, 'index']);
+        Route::post('/', [API\V1_4\MemberController::class, 'store']);
+        Route::post('/batch-add', [API\V1_4\MemberController::class, 'batchAdd']);
+        Route::post('/update/{code}', [API\V1_4\MemberController::class, 'update']);
+        Route::get('/me', [API\V1_4\MemberController::class, 'me']);
+        Route::post('/me', [API\V1_4\MemberController::class, 'updateMe']);
+    });
+
+    Route::group(["prefix"=>"transactions", "middleware"=>"auth:sanctum"], function (){
+        Route::post('/', [API\V1_2\TransactionController::class, 'store']);
+    });
+
+    Route::group(["prefix"=>"highlights", "middleware"=>"auth:sanctum"], function (){
+        Route::post('/', [API\V1_2\HighlightController::class, 'store']);
+    });
+
+    Route::group(["prefix"=>"data", "middleware"=>"auth:sanctum"], function (){
+        Route::post('/', [API\V1_3\AppController::class, 'syncData']);
+        Route::post('/delete', [API\V1_3\AppController::class, 'deleteData']);
+    });
+
+    /* Starred & saved sermons (shared with the website) */
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/sermon-saves', [API\V1_4\SermonSaveController::class, 'index']);
+        Route::post('/sermons/{sermon}/saves', [API\V1_4\SermonSaveController::class, 'toggle'])->whereNumber('sermon');
+    });
+
+    /* Giving options (managed on the web) */
+    Route::get('/giving', [API\V1_4\GivingController::class, 'index']);
+
+    /* Downloads (ICA Resources): signed-in users only from 1.4 */
+    Route::group(["prefix"=>"downloads", "middleware"=>"auth:sanctum"],function (){
+        Route::get('/',[API\V1_1\DownloadController::class, 'index']);
+    });
+
+
+    Route::group(["prefix"=>"registers", "middleware"=>"auth:sanctum"], function (){
+        Route::middleware('scope:registers')->group(function () {
+            Route::get('/', [API\V1_3\RegisterController::class, 'index']);
+            Route::post('/', [API\V1_3\RegisterController::class, 'store']);
+            Route::get('/{code}/attendance', [API\V1_3\RegisterController::class, 'attendance']);
+            Route::post('/attendance', [API\V1_3\RegisterController::class, 'recordAttendance']);
+        });
+        // Anyone signed in can check themselves in.
+        Route::post('/attendance/self-registration/{code}', [API\V1_3\RegisterController::class, 'selfRegistration']);
+        // QR / app-link check-in (service day only).
+        Route::post('/{code}/check-in', [API\V1_4\CheckInController::class, 'store']);
+    });
+
+    /* "I'm praying" on a prayer point (GET works signed out: count only). */
+    Route::get('/prayers/{prayer}/praying', [API\V1_4\PrayerController::class, 'praying']);
+    Route::post('/prayers/{prayer}/praying', [API\V1_4\PrayerController::class, 'togglePraying'])->middleware('auth:sanctum');
+
+//    Route::post('/notification',[\App\Http\Controllers\Web\NotificationController::class, 'pushNotification']);
+
+
+});
+
+/*
 |--------------------------------------------------------------------------
 | API v2 — clean rebuild
 |--------------------------------------------------------------------------

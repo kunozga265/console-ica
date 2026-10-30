@@ -57,6 +57,8 @@ class HandleInertiaRequests extends Middleware
             'roles' => function () use ($request) {
                 return $request->user()?->roles->pluck('name') ?? [];
             },
+            // What this user may manage (App\Support\Scopes); drives the admin sidebar and links.
+            'scopes' => fn () => $request->user()?->scopes() ?? [],
             'isMember' => function () use ($request) {
                 return $request->user()?->member_id !== null;
             },
@@ -66,7 +68,7 @@ class HandleInertiaRequests extends Middleware
             'nextCellMeeting' => fn () => UIShellData::nextCellMeeting($request),
             'sermonSaves' => fn () => UIShellData::sermonSaves($request),
             'notifications' => fn () => UIShellData::notifications($request),
-            'isAdmin' => fn () => (bool) $request->user()?->hasAnyRole(['admin', 'super']),
+            'isAdmin' => fn () => (bool) $request->user()?->hasAnyScope(),
             // Lets the sign-in pages explain why they're shown after scanning a check-in QR code.
             'authIntent' => fn () => str_contains((string) $request->session()->get('url.intended'), '/check-in/') ? 'check-in' : null,
         ] : [

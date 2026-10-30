@@ -23,39 +23,45 @@ const user = computed(() => inertia.props.auth?.user ?? {});
 const counts = computed(() => inertia.props.adminCounts ?? {});
 const fmt = (n) => (n === undefined || n === null ? null : Number(n).toLocaleString());
 
+// Sections this user may open (App\Support\Scopes); super admins have all of them.
+const scopes = computed(() => inertia.props.scopes ?? []);
+const isSuper = computed(() => (inertia.props.roles ?? []).includes('super'));
+const allowed = (it) => !it.scope || scopes.value.includes(it.scope);
+
 const NAV = computed(() => [
     { label: null, items: [{ id: 'dashboard', name: 'Dashboard', icon: 'grid', route: 'admin.dashboard' }] },
     {
         label: 'Content',
         items: [
-            { id: 'sermons', name: 'Sermons', icon: 'mic', route: 'admin.sermons.index', count: fmt(counts.value.sermons) },
-            { id: 'series', name: 'Series', icon: 'layers', route: 'admin.series.index', count: fmt(counts.value.series) },
-            { id: 'ministers', name: 'Ministers', icon: 'person', route: 'admin.ministers.index', count: fmt(counts.value.ministers) },
-            { id: 'resources', name: 'Resources', icon: 'folder', route: 'admin.resources.index' },
+            { id: 'sermons', scope: 'sermons', name: 'Sermons', icon: 'mic', route: 'admin.sermons.index', count: fmt(counts.value.sermons) },
+            { id: 'series', scope: 'sermons', name: 'Series', icon: 'layers', route: 'admin.series.index', count: fmt(counts.value.series) },
+            { id: 'ministers', scope: 'sermons', name: 'Ministers', icon: 'person', route: 'admin.ministers.index', count: fmt(counts.value.ministers) },
+            { id: 'resources', scope: 'sermons', name: 'Resources', icon: 'folder', route: 'admin.resources.index' },
         ],
     },
     {
         label: 'Community',
         items: [
-            { id: 'members', name: 'Members', icon: 'users', route: 'admin.members.index', count: fmt(counts.value.members) },
-            { id: 'registers', name: 'Registers', icon: 'check', route: 'admin.registers.index' },
-            { id: 'attendance', name: 'Attendance', icon: 'grid', route: 'admin.attendance' },
-            { id: 'cells', name: 'Cells', icon: 'shield', route: 'admin.cells.index', count: counts.value.cells ? `${counts.value.cells} new` : null },
-            { id: 'events', name: 'Events', icon: 'calendar', route: 'admin.events.index', count: fmt(counts.value.events) },
-            { id: 'ministries', name: 'Ministries', icon: 'layers', route: 'admin.ministries.index' },
+            { id: 'members', scope: 'members', name: 'Members', icon: 'users', route: 'admin.members.index', count: fmt(counts.value.members) },
+            { id: 'visitors', scope: 'members', name: 'Visitors', icon: 'heart', route: 'admin.visitors.index', count: counts.value.visitorsDue ? `${counts.value.visitorsDue} due` : null },
+            { id: 'registers', scope: 'registers', name: 'Registers', icon: 'check', route: 'admin.registers.index' },
+            { id: 'attendance', scope: 'registers', name: 'Attendance', icon: 'grid', route: 'admin.attendance' },
+            { id: 'cells', scope: 'cells', name: 'Cells', icon: 'shield', route: 'admin.cells.index', count: counts.value.cells ? `${counts.value.cells} new` : null },
+            { id: 'events', scope: 'events', name: 'Events', icon: 'calendar', route: 'admin.events.index', count: fmt(counts.value.events) },
+            { id: 'ministries', scope: 'ministries', name: 'Ministries', icon: 'layers', route: 'admin.ministries.index' },
         ],
     },
     {
         label: 'Engagement',
         items: [
-            { id: 'prayer', name: 'Prayer Points', icon: 'pray', route: 'admin.prayer.index', count: fmt(counts.value.prayer) },
-            { id: 'announcements', name: 'Announcements', icon: 'bell', route: 'admin.announcements.edit' },
-            { id: 'giving', name: 'Giving Options', icon: 'gift', route: 'admin.giving.index' },
-            { id: 'devotions', name: 'Devotionals', icon: 'book', soon: true },
-            { id: 'favorites', name: 'Favorites', icon: 'heart', route: 'admin.favorites' },
+            { id: 'prayer', scope: 'prayer', name: 'Prayer Points', icon: 'pray', route: 'admin.prayer.index', count: fmt(counts.value.prayer) },
+            { id: 'announcements', scope: 'announcements', name: 'Announcements', icon: 'bell', route: 'admin.announcements.edit' },
+            { id: 'giving', scope: 'giving', name: 'Giving Options', icon: 'gift', route: 'admin.giving.index' },
+            { id: 'devotions', scope: 'sermons', name: 'Devotionals', icon: 'book', soon: true },
+            { id: 'favorites', scope: 'sermons', name: 'Favorites', icon: 'heart', route: 'admin.favorites' },
         ],
     },
-]);
+].map((g) => ({ ...g, items: g.items.filter(allowed) })).filter((g) => g.items.length));
 
 /* ---- Theme (light/dark), remembered per browser ---- */
 const theme = ref('light');
@@ -123,11 +129,11 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKey));
                 </nav>
 
                 <div class="side-foot">
-                    <Link class="nav-item" :class="{ active: page === 'users' }" :href="route('admin.users.index')"><Icon name="settings" /><span>Users &amp; roles</span></Link>
+                    <Link v-if="isSuper" class="nav-item" :class="{ active: page === 'users' }" :href="route('admin.users.index')"><Icon name="settings" /><span>Users &amp; access</span></Link>
                     <a class="nav-item" :href="route('ui.dashboard')"><Icon name="ext" /><span>Back to site</span></a>
                     <a class="user-chip" :href="route('ui.profile')">
                         <Avatar :person="{ id: user.id, name: `${user.first_name ?? ''} ${user.last_name ?? ''}`, avatar: user.avatar }" />
-                        <span class="who"><b>{{ user.first_name }} {{ user.last_name }}</b><span>{{ $page.props.roles?.includes('super') ? 'Super admin' : 'Admin' }}</span></span>
+                        <span class="who"><b>{{ user.first_name }} {{ user.last_name }}</b><span>{{ isSuper ? 'Super admin' : 'Manager' }}</span></span>
                     </a>
                 </div>
             </aside>

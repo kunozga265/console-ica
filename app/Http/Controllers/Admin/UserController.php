@@ -3,24 +3,29 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Role;
 use App\Models\User;
+use App\Support\Scopes;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
-/** Who can sign in, and who is an admin. */
+/** Who can sign in, and what each person may manage (scopes). Super users only. */
 class UserController extends Controller
 {
     public function index(Request $request)
     {
         $search = trim((string) $request->query('search', ''));
-        $role = $request->query('role');
+        $access = $request->query('access'); // super | scoped
 
         $page = User::with(['roles', 'member:id,avatar,code'])
             ->when($search !== '', fn ($q) => $q->where(fn ($w) => $w->whereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$search}%"])->orWhere('email', 'like', "%{$search}%")))
-            ->when(in_array($role, ['admin', 'super']), fn ($q) => $q->whereHas('roles', fn ($r) => $r->where('name', $role)))
+            ->when($access === 'super', fn ($q) => $q->whereHas('roles', fn ($r) => $r->where('name', 'super')))
+            ->when($access === 'scoped', fn ($q) => $q->whereIn('id', DB::table('user_scopes')->select('user_id')))
             ->orderBy('first_name')->orderBy('last_name')
             ->paginate(20)->withQueryString();
+
+        $scopes = DB::table('user_scopes')->whereIn('user_id', collect($page->items())->pluck('id'))->get()->groupBy('user_id');
 
         return Inertia::render('Admin/Users', [
             'users' => collect($page->items())->map(fn (User $u) => [
@@ -29,33 +34,37 @@ class UserController extends Controller
                 'email'  => $u->email,
                 'avatar' => $u->member?->avatar,
                 'member' => $u->member?->code,
-                'roles'  => $u->roles->pluck('name')->unique()->values(),
+                'super'  => $u->isSuper(),
+                'scopes' => $u->isSuper() ? Scopes::keys() : array_values(array_intersect(Scopes::keys(), ($scopes[$u->id] ?? collect())->pluck('scope')->all())),
                 'joined' => $u->created_at?->getTimestamp() * 1000,
             ]),
+            'scopeOptions' => Scopes::options(),
             'paging'  => ['page' => $page->currentPage(), 'lastPage' => $page->lastPage(), 'total' => $page->total()],
-            'filters' => ['search' => $search, 'role' => $role],
+            'filters' => ['search' => $search, 'access' => $access],
             'counts'  => [
                 'users'  => User::count(),
-                'admins' => User::whereHas('roles', fn ($r) => $r->where('name', 'admin'))->count(),
+                'scoped' => DB::table('user_scopes')->distinct('user_id')->count('user_id'),
                 'supers' => User::whereHas('roles', fn ($r) => $r->where('name', 'super'))->count(),
             ],
         ]);
     }
 
-    /** Grant or revoke admin (as the old console did). Super users can't be changed here. */
-    public function toggleAdmin(Request $request, User $user)
+    /** Assign what a user may manage. Super users (who have everything) and yourself can't be changed. */
+    public function updateScopes(Request $request, User $user)
     {
-        if ($user->hasRole('super')) {
-            return back()->withErrors(['role' => 'Super users can’t be changed here.']);
+        if ($user->isSuper()) {
+            return back()->withErrors(['scopes' => 'Super users have every scope.']);
         }
         if ($user->id === $request->user()->id) {
-            return back()->withErrors(['role' => 'You can’t change your own role.']);
+            return back()->withErrors(['scopes' => 'You can’t change your own access.']);
         }
 
-        $makeAdmin = ! $user->hasRole('admin');
-        $user->roles()->detach();
-        $user->roles()->attach(Role::where('name', $makeAdmin ? 'admin' : 'normal')->value('id'));
+        $v = $request->validate([
+            'scopes'   => ['present', 'array'],
+            'scopes.*' => ['string', Rule::in(Scopes::keys())],
+        ]);
+        $user->syncScopes($v['scopes']);
 
-        return back()->with('success', $makeAdmin ? "{$user->fullName()} is now an admin" : "{$user->fullName()} is no longer an admin");
+        return back()->with('success', $v['scopes'] ? "Updated {$user->fullName()}’s access" : "{$user->fullName()} no longer manages anything");
     }
 }

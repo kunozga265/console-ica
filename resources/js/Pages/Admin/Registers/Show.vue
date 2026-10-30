@@ -81,6 +81,10 @@ const exportQr = async (kind) => {
         exporting.value = null;
     }
 };
+
+/* Visitors among today's attendees; the members scope follows them up on /admin/visitors. */
+const visitorsHere = computed(() => props.attendees.filter((a) => !a.isRegistered));
+const canFollowUp = computed(() => (usePage().props.scopes ?? []).includes('members'));
 </script>
 
 <template>
@@ -161,6 +165,22 @@ const exportQr = async (kind) => {
                         </div>
                     </div>
                     <p v-else class="card-pad small muted">No one has been marked present yet.</p>
+                </section>
+                <!-- Visitors at this service (followed up on the Visitors page) -->
+                <section v-if="visitorsHere.length" class="card">
+                    <div class="card-head">
+                        <h3>Visitors at this service</h3>
+                        <span class="badge badge-gold">{{ visitorsHere.length }}</span>
+                        <div class="spacer"></div>
+                        <a v-if="canFollowUp" class="btn btn-ghost btn-sm" :href="route('admin.visitors.index', { status: 'all' })">All visitors →</a>
+                    </div>
+                    <div style="padding: 4px 22px 8px">
+                        <div v-for="a in visitorsHere" :key="a.id" class="list-row compact">
+                            <Avatar :person="a" size="sm" />
+                            <div class="grow"><div class="t">{{ a.name }}</div><div class="s">{{ a.cell || 'No cell yet' }}</div></div>
+                            <a v-if="canFollowUp" class="btn btn-soft btn-sm" :href="route('admin.visitors.index', { status: 'all', visitor: a.id })">Follow up</a>
+                        </div>
+                    </div>
                 </section>
             </div>
 

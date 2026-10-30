@@ -21,6 +21,10 @@ use App\Http\Controllers\Web\UI\SermonController as UISermonController;
 use App\Http\Controllers\Web\UI\SermonFillController as UISermonFillController;
 use Illuminate\Support\Facades\Route;
 
+// Universal Links (iOS) / App Links (Android): open check-in & sermon links in the app.
+Route::get('/.well-known/apple-app-site-association', [\App\Http\Controllers\Web\AppLinksController::class, 'apple']);
+Route::get('/.well-known/assetlinks.json', [\App\Http\Controllers\Web\AppLinksController::class, 'android']);
+
 Route::get('/auth/{provider}/redirect', [AuthController::class, 'redirect'])->name('auth.provider');
 Route::get('/auth/{provider}/callback', [AuthController::class, 'callback']);
 
@@ -42,7 +46,6 @@ Route::name('ui.')->group(function () use ($auth) {
     Route::get('/events', [UIEventController::class, 'index'])->name('events');
     Route::get('/prayer', [UIPrayerController::class, 'index'])->name('prayer');
     Route::get('/prayer/{prayer}', [UIPrayerController::class, 'show'])->whereNumber('prayer')->name('prayer.show');
-    Route::get('/resources', [UIResourceController::class, 'index'])->name('resources');
     Route::get('/about', UIAboutController::class)->name('about');
 
     // App-store account deletion: enter email → emailed signed link → confirm → deleted.
@@ -64,6 +67,8 @@ Route::name('ui.')->group(function () use ($auth) {
     // Signed-in users (member profile not required).
     Route::middleware($auth)->group(function () {
         Route::post('/sermons/{sermon}/saves', [UIEngagementController::class, 'toggleSermonSave'])->name('sermons.saves');
+        // ICA Resources: signed-in users only.
+        Route::get('/resources', [UIResourceController::class, 'index'])->name('resources');
         Route::post('/sermons/{sermon}/fills', [UISermonFillController::class, 'store'])->name('fills.store');
         // "Sign in to fill in the blanks": guests land on login, then come straight back to the sermon.
         Route::get('/sermons/{sermon}/fill-in', [UISermonFillController::class, 'signin'])->name('fills.signin');
@@ -94,18 +99,24 @@ Route::name('ui.')->group(function () use ($auth) {
             Route::post('/check-in/{register}', [UICheckInController::class, 'store'])->name('check-in.store');
         });
 
-        // Front-of-house tools for admins: service registers and the people directory.
-        Route::middleware(['role:admin,super'])->group(function () {
-            Route::get('/attendance', [UIAttendanceSheetController::class, 'index'])->name('attendance');
-            Route::post('/attendance', [UIAttendanceSheetController::class, 'store'])->name('attendance.store');
-            Route::get('/attendance/{register}', [UIAttendanceSheetController::class, 'show'])->name('attendance.show');
-            Route::put('/attendance/{register}', [UIAttendanceSheetController::class, 'update'])->name('attendance.update');
-            Route::delete('/attendance/{register}', [UIAttendanceSheetController::class, 'destroy'])->name('attendance.destroy');
-            Route::post('/attendance/{register}/toggle', [UIAttendanceSheetController::class, 'toggle'])->name('attendance.toggle');
+        // Front-of-house tools: service registers (registers scope) and the people directory (members scope).
+        Route::middleware(['scope:registers,members'])->group(function () {
+            Route::middleware('scope:registers')->group(function () {
+                Route::get('/attendance', [UIAttendanceSheetController::class, 'index'])->name('attendance');
+                Route::post('/attendance', [UIAttendanceSheetController::class, 'store'])->name('attendance.store');
+                Route::get('/attendance/{register}', [UIAttendanceSheetController::class, 'show'])->name('attendance.show');
+                Route::put('/attendance/{register}', [UIAttendanceSheetController::class, 'update'])->name('attendance.update');
+                Route::delete('/attendance/{register}', [UIAttendanceSheetController::class, 'destroy'])->name('attendance.destroy');
+                Route::post('/attendance/{register}/toggle', [UIAttendanceSheetController::class, 'toggle'])->name('attendance.toggle');
+            });
 
+            // Adding a person (e.g. a visitor at a service) is open to both scopes…
             Route::post('/members', [UIMemberController::class, 'store'])->name('members.store');
-            Route::put('/members/{member}', [UIMemberController::class, 'update'])->name('members.update');
-            Route::post('/members/{member}/register', [UIMemberController::class, 'register'])->name('members.register');
+            // …editing people and making visitors full members is the members scope.
+            Route::middleware('scope:members')->group(function () {
+                Route::put('/members/{member}', [UIMemberController::class, 'update'])->name('members.update');
+                Route::post('/members/{member}/register', [UIMemberController::class, 'register'])->name('members.register');
+            });
         });
     });
 });
@@ -125,81 +136,111 @@ Route::middleware($auth)->prefix('member-link')->name('member-link.')->group(fun
 | Admin (/admin) — admins only
 |--------------------------------------------------------------------------
 */
-Route::middleware([...$auth, 'role:admin,super'])->prefix('admin')->name('admin.')->group(function () {
-    // Images dropped/inserted into the sermon & prayer WYSIWYG editors.
-    Route::post('/uploads/image', Admin\EditorImageController::class)->middleware('throttle:60,1')->name('uploads.image');
-
+Route::middleware([...$auth, 'scope:any'])->prefix('admin')->name('admin.')->group(function () {
+    // Anyone with at least one scope reaches the admin area; each section needs its own scope
+    // (App\Support\Scopes). Super users have every scope.
     Route::get('/', Admin\DashboardController::class)->name('dashboard');
 
-    Route::get('/sermons', [Admin\SermonController::class, 'index'])->name('sermons.index');
-    Route::get('/sermons/create', [Admin\SermonController::class, 'create'])->name('sermons.create');
-    Route::post('/sermons', [Admin\SermonController::class, 'store'])->name('sermons.store');
-    Route::get('/sermons/{sermon}/edit', [Admin\SermonController::class, 'edit'])->withTrashed()->name('sermons.edit');
-    Route::put('/sermons/{sermon}', [Admin\SermonController::class, 'update'])->withTrashed()->name('sermons.update');
-    Route::delete('/sermons/{sermon}', [Admin\SermonController::class, 'destroy'])->name('sermons.destroy');
-    Route::post('/sermons/{sermon}/restore', [Admin\SermonController::class, 'restore'])->withTrashed()->name('sermons.restore');
-    Route::post('/sermons/{sermon}/fills-reveal', [Admin\SermonController::class, 'toggleFillsReveal'])->withTrashed()->name('sermons.fills-reveal');
+    // Images dropped/inserted into the sermon & prayer WYSIWYG editors.
+    Route::post('/uploads/image', Admin\EditorImageController::class)->middleware(['throttle:60,1', 'scope:sermons,prayer'])->name('uploads.image');
 
-    Route::get('/series', [Admin\SeriesController::class, 'index'])->name('series.index');
-    Route::post('/series', [Admin\SeriesController::class, 'store'])->name('series.store');
-    Route::put('/series/{series}', [Admin\SeriesController::class, 'update'])->name('series.update');
-    Route::delete('/series/{series}', [Admin\SeriesController::class, 'destroy'])->name('series.destroy');
+    // Sermons, series, ministers, resources and the favourites report.
+    Route::middleware('scope:sermons')->group(function () {
+        Route::get('/sermons', [Admin\SermonController::class, 'index'])->name('sermons.index');
+        Route::get('/sermons/create', [Admin\SermonController::class, 'create'])->name('sermons.create');
+        Route::post('/sermons', [Admin\SermonController::class, 'store'])->name('sermons.store');
+        Route::get('/sermons/{sermon}/edit', [Admin\SermonController::class, 'edit'])->withTrashed()->name('sermons.edit');
+        Route::put('/sermons/{sermon}', [Admin\SermonController::class, 'update'])->withTrashed()->name('sermons.update');
+        Route::delete('/sermons/{sermon}', [Admin\SermonController::class, 'destroy'])->name('sermons.destroy');
+        Route::post('/sermons/{sermon}/restore', [Admin\SermonController::class, 'restore'])->withTrashed()->name('sermons.restore');
+        Route::post('/sermons/{sermon}/fills-reveal', [Admin\SermonController::class, 'toggleFillsReveal'])->withTrashed()->name('sermons.fills-reveal');
+        Route::get('/series', [Admin\SeriesController::class, 'index'])->name('series.index');
+        Route::post('/series', [Admin\SeriesController::class, 'store'])->name('series.store');
+        Route::put('/series/{series}', [Admin\SeriesController::class, 'update'])->name('series.update');
+        Route::delete('/series/{series}', [Admin\SeriesController::class, 'destroy'])->name('series.destroy');
+        Route::get('/ministers', [Admin\MinisterController::class, 'index'])->name('ministers.index');
+        Route::post('/ministers', [Admin\MinisterController::class, 'store'])->name('ministers.store');
+        Route::post('/ministers/{author}', [Admin\MinisterController::class, 'update'])->name('ministers.update'); // POST: multipart upload
+        Route::delete('/ministers/{author}', [Admin\MinisterController::class, 'destroy'])->name('ministers.destroy');
+        Route::get('/resources', [Admin\ResourceController::class, 'index'])->name('resources.index');
+        Route::post('/resources', [Admin\ResourceController::class, 'store'])->name('resources.store');
+        Route::put('/resources/{download}', [Admin\ResourceController::class, 'update'])->name('resources.update');
+        Route::delete('/resources/{download}', [Admin\ResourceController::class, 'destroy'])->name('resources.destroy');
+        Route::get('/favorites', Admin\FavoritesController::class)->name('favorites');
+    });
 
-    Route::get('/ministers', [Admin\MinisterController::class, 'index'])->name('ministers.index');
-    Route::post('/ministers', [Admin\MinisterController::class, 'store'])->name('ministers.store');
-    Route::post('/ministers/{author}', [Admin\MinisterController::class, 'update'])->name('ministers.update'); // POST: multipart upload
-    Route::delete('/ministers/{author}', [Admin\MinisterController::class, 'destroy'])->name('ministers.destroy');
+    // Member directory, visitors and their follow-ups.
+    Route::middleware('scope:members')->group(function () {
+        Route::get('/members', [Admin\MemberController::class, 'index'])->name('members.index');
+        Route::delete('/members/{member}', [Admin\MemberController::class, 'destroy'])->name('members.destroy');
+        Route::get('/visitors', [Admin\VisitorController::class, 'index'])->name('visitors.index');
+        Route::post('/visitors/{member}/follow-ups', [Admin\VisitorController::class, 'storeFollowUp'])->name('visitors.follow-ups.store');
+        Route::delete('/visitors/follow-ups/{followUp}', [Admin\VisitorController::class, 'destroyFollowUp'])->name('visitors.follow-ups.destroy');
+    });
 
-    Route::get('/resources', [Admin\ResourceController::class, 'index'])->name('resources.index');
-    Route::post('/resources', [Admin\ResourceController::class, 'store'])->name('resources.store');
-    Route::put('/resources/{download}', [Admin\ResourceController::class, 'update'])->name('resources.update');
-    Route::delete('/resources/{download}', [Admin\ResourceController::class, 'destroy'])->name('resources.destroy');
+    // Registers (CRUD + marking attendance, same rules as the site attendance sheets) and attendance reports.
+    Route::middleware('scope:registers')->group(function () {
+        Route::get('/attendance', Admin\AttendanceController::class)->name('attendance');
+        Route::get('/registers', [Admin\RegisterController::class, 'index'])->name('registers.index');
+        Route::post('/registers', [Admin\RegisterController::class, 'store'])->name('registers.store');
+        Route::get('/registers/{register}', [Admin\RegisterController::class, 'show'])->name('registers.show');
+        Route::put('/registers/{register}', [Admin\RegisterController::class, 'update'])->name('registers.update');
+        Route::delete('/registers/{register}', [Admin\RegisterController::class, 'destroy'])->name('registers.destroy');
+        Route::post('/registers/{register}/toggle', [Admin\RegisterController::class, 'toggle'])->name('registers.toggle');
+    });
 
-    Route::get('/members', [Admin\MemberController::class, 'index'])->name('members.index');
-    Route::delete('/members/{member}', [Admin\MemberController::class, 'destroy'])->name('members.destroy');
-    Route::get('/attendance', Admin\AttendanceController::class)->name('attendance');
+    // Ministries.
+    Route::middleware('scope:ministries')->group(function () {
+        Route::get('/ministries', [Admin\MinistryController::class, 'index'])->name('ministries.index');
+        Route::post('/ministries', [Admin\MinistryController::class, 'store'])->name('ministries.store');
+        Route::put('/ministries/{ministry}', [Admin\MinistryController::class, 'update'])->name('ministries.update');
+        Route::delete('/ministries/{ministry}', [Admin\MinistryController::class, 'destroy'])->name('ministries.destroy');
+    });
 
-    // Registers: CRUD + marking attendance (same rules as the site's attendance sheets).
-    Route::get('/registers', [Admin\RegisterController::class, 'index'])->name('registers.index');
-    Route::post('/registers', [Admin\RegisterController::class, 'store'])->name('registers.store');
-    Route::get('/registers/{register}', [Admin\RegisterController::class, 'show'])->name('registers.show');
-    Route::put('/registers/{register}', [Admin\RegisterController::class, 'update'])->name('registers.update');
-    Route::delete('/registers/{register}', [Admin\RegisterController::class, 'destroy'])->name('registers.destroy');
-    Route::post('/registers/{register}/toggle', [Admin\RegisterController::class, 'toggle'])->name('registers.toggle');
+    // Giving options.
+    Route::middleware('scope:giving')->group(function () {
+        Route::get('/giving', [Admin\GivingController::class, 'index'])->name('giving.index');
+        Route::post('/giving', [Admin\GivingController::class, 'store'])->name('giving.store');
+        Route::put('/giving/{option}', [Admin\GivingController::class, 'update'])->name('giving.update');
+        Route::delete('/giving/{option}', [Admin\GivingController::class, 'destroy'])->name('giving.destroy');
+    });
 
-    Route::get('/ministries', [Admin\MinistryController::class, 'index'])->name('ministries.index');
-    Route::post('/ministries', [Admin\MinistryController::class, 'store'])->name('ministries.store');
-    Route::put('/ministries/{ministry}', [Admin\MinistryController::class, 'update'])->name('ministries.update');
-    Route::delete('/ministries/{ministry}', [Admin\MinistryController::class, 'destroy'])->name('ministries.destroy');
+    // Cells.
+    Route::middleware('scope:cells')->group(function () {
+        Route::get('/cells', [Admin\CellController::class, 'index'])->name('cells.index');
+        Route::post('/cells', [Admin\CellController::class, 'store'])->name('cells.store');
+        Route::put('/cells/{cell}', [Admin\CellController::class, 'update'])->name('cells.update');
+        Route::delete('/cells/{cell}', [Admin\CellController::class, 'destroy'])->name('cells.destroy');
+        Route::post('/cells/{cell}/verify', [Admin\CellController::class, 'verify'])->name('cells.verify');
+    });
 
-    Route::get('/giving', [Admin\GivingController::class, 'index'])->name('giving.index');
-    Route::post('/giving', [Admin\GivingController::class, 'store'])->name('giving.store');
-    Route::put('/giving/{option}', [Admin\GivingController::class, 'update'])->name('giving.update');
-    Route::delete('/giving/{option}', [Admin\GivingController::class, 'destroy'])->name('giving.destroy');
+    // Events.
+    Route::middleware('scope:events')->group(function () {
+        Route::get('/events', [Admin\EventController::class, 'index'])->name('events.index');
+        Route::post('/events', [Admin\EventController::class, 'store'])->name('events.store');
+        Route::post('/events/{event}', [Admin\EventController::class, 'update'])->name('events.update'); // POST: multipart upload
+        Route::delete('/events/{event}', [Admin\EventController::class, 'destroy'])->name('events.destroy');
+    });
 
-    Route::get('/cells', [Admin\CellController::class, 'index'])->name('cells.index');
-    Route::post('/cells', [Admin\CellController::class, 'store'])->name('cells.store');
-    Route::put('/cells/{cell}', [Admin\CellController::class, 'update'])->name('cells.update');
-    Route::delete('/cells/{cell}', [Admin\CellController::class, 'destroy'])->name('cells.destroy');
-    Route::post('/cells/{cell}/verify', [Admin\CellController::class, 'verify'])->name('cells.verify');
+    // Prayer points.
+    Route::middleware('scope:prayer')->group(function () {
+        Route::get('/prayer', [Admin\PrayerController::class, 'index'])->name('prayer.index');
+        Route::post('/prayer', [Admin\PrayerController::class, 'store'])->name('prayer.store');
+        Route::put('/prayer/{prayer}', [Admin\PrayerController::class, 'update'])->name('prayer.update');
+        Route::delete('/prayer/{prayer}', [Admin\PrayerController::class, 'destroy'])->name('prayer.destroy');
+    });
 
-    Route::get('/events', [Admin\EventController::class, 'index'])->name('events.index');
-    Route::post('/events', [Admin\EventController::class, 'store'])->name('events.store');
-    Route::post('/events/{event}', [Admin\EventController::class, 'update'])->name('events.update'); // POST: multipart upload
-    Route::delete('/events/{event}', [Admin\EventController::class, 'destroy'])->name('events.destroy');
+    // Announcements.
+    Route::middleware('scope:announcements')->group(function () {
+        Route::get('/announcements', [Admin\AnnouncementController::class, 'edit'])->name('announcements.edit');
+        Route::put('/announcements', [Admin\AnnouncementController::class, 'update'])->name('announcements.update');
+    });
 
-    Route::get('/prayer', [Admin\PrayerController::class, 'index'])->name('prayer.index');
-    Route::post('/prayer', [Admin\PrayerController::class, 'store'])->name('prayer.store');
-    Route::put('/prayer/{prayer}', [Admin\PrayerController::class, 'update'])->name('prayer.update');
-    Route::delete('/prayer/{prayer}', [Admin\PrayerController::class, 'destroy'])->name('prayer.destroy');
+    // Users & scopes: super users only.
+    Route::middleware('role:super')->group(function () {
+        Route::get('/users', [Admin\UserController::class, 'index'])->name('users.index');
+        Route::put('/users/{user}/scopes', [Admin\UserController::class, 'updateScopes'])->name('users.scopes');
+    });
 
-    Route::get('/announcements', [Admin\AnnouncementController::class, 'edit'])->name('announcements.edit');
-    Route::put('/announcements', [Admin\AnnouncementController::class, 'update'])->name('announcements.update');
-
-    Route::get('/favorites', Admin\FavoritesController::class)->name('favorites');
-
-    Route::get('/users', [Admin\UserController::class, 'index'])->name('users.index');
-    Route::post('/users/{user}/role', [Admin\UserController::class, 'toggleAdmin'])->name('users.role');
-
-    // Devotionals has no data model yet — the nav item is a placeholder.
+    // Devotionals has no data model yet; the nav item is a placeholder.
 });

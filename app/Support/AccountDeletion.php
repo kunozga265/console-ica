@@ -32,6 +32,7 @@ class AccountDeletion
 
             DB::table('views')->where('user_id', $id)->update(['user_id' => null]);
             DB::table('cells')->where('user_id', $id)->update(['user_id' => null]);
+            DB::table('visitor_follow_ups')->where('user_id', $id)->update(['user_id' => null]);
             DB::table('ministries')->where('user_id', $id)->update(['user_id' => null]);
             DB::table('cell_join_requests')->where('handled_by', $id)->update(['handled_by' => null]);
 

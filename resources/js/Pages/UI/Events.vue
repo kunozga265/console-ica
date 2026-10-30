@@ -16,7 +16,8 @@ const props = defineProps({
 
 const page = usePage();
 const signedIn = computed(() => !!page.props.auth?.user);
-const isAdmin = computed(() => !!page.props.isAdmin);
+// RSVP counts are sent to (and shown for) the events scope only.
+const isAdmin = computed(() => (page.props.scopes ?? []).includes('events'));
 const past = computed(() => props.filters.when === 'past');
 
 const visit = (params) =>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API\V1_2;
 
+use App\Support\AnnotationSync;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\HighlightResource;
 use App\Models\Author;
@@ -87,75 +88,20 @@ class AppController extends Controller
 
     public function syncData(Request $request)
     {
-        $request->validate([]);
+        $userId = Auth::id();
 
-
-        //highlights
-        foreach ($request->input("highlights.latest") ?? [] as $highlight) {
-            if (!Highlight::where("sermon_id", $highlight["sermon_id"])->where("highlight_id", $highlight["highlight_id"])->exists()) {
-                Highlight::create([
-                    "sermon_id" => $highlight["sermon_id"],
-                    "highlight_id" => $highlight["highlight_id"],
-                    "date" => $highlight["date"],
-                    "user_id" => Auth::id(),
-                ]);
-            }
+        // All writes are per user and idempotent (App\Support\AnnotationSync).
+        foreach ($request->input("highlights.latest") ?? [] as $h) {
+            AnnotationSync::highlight($userId, $h["sermon_id"], $h["highlight_id"], $h["date"] ?? null);
         }
-
-        foreach ($request->input("highlights.trashed") ?? [] as $highlight) {
-            $highlight = Highlight::where("sermon_id", $highlight["sermon_id"])->where("highlight_id", $highlight["highlight_id"])->first();
-            if (is_object($highlight)) {
-                $highlight->delete();
-            }
+        foreach ($request->input("highlights.trashed") ?? [] as $h) {
+            AnnotationSync::unhighlight($userId, $h["sermon_id"], $h["highlight_id"]);
         }
-
-        //bookmarks
-        foreach ($request->bookmarks ?? [] as $bookmark) {
-
-            $bookmark = Bookmark::where("sermon_id", $bookmark["sermonId"])
-                ->where("user_id", Auth::id())
-                ->where("caption_id", $bookmark["captionId"])
-                ->first();
-
-            if (is_object($bookmark)) {
-                $bookmark->update([
-                    "sermon_id" => $bookmark["sermonId"],
-                    "caption" => $bookmark["caption"],
-                    "caption_id" => $bookmark["captionId"],
-                    "date" => $bookmark["date"],
-                    "comment" => $bookmark["comment"],
-                    "user_id" => Auth::id(),
-                ]);
-            } else {
-                Bookmark::create([
-                    "sermon_id" => $bookmark["sermonId"],
-                    "caption" => $bookmark["caption"],
-                    "caption_id" => $bookmark["captionId"],
-                    "date" => $bookmark["date"],
-                    "comment" => $bookmark["comment"],
-                    "user_id" => Auth::id(),
-                ]);
-            }
+        foreach ($request->bookmarks ?? [] as $b) {
+            AnnotationSync::bookmark($userId, $b["sermonId"], $b["captionId"], $b["caption"] ?? null, $b["date"] ?? null, $b["comment"] ?? null);
         }
-
-        //notes
-        foreach ($request->notes ?? [] as $note) {
-            $_note = Note::where("sermon_id", $note["sermonId"])->where("user_id", Auth::id())->first();
-            if (is_object($_note)) {
-                $_note->update([
-                    "sermon_id" => $note["sermonId"],
-                    "body" => $note["body"],
-                    "date" => $note["date"],
-                    "user_id" => Auth::id(),
-                ]);
-            } else {
-                Note::create([
-                    "sermon_id" => $note["sermonId"],
-                    "body" => $note["body"],
-                    "date" => $note["date"],
-                    "user_id" => Auth::id(),
-                ]);
-            }
+        foreach ($request->notes ?? [] as $n) {
+            AnnotationSync::note($userId, $n["sermonId"], $n["body"] ?? null, $n["date"] ?? null);
         }
 
         return response()->json(["message" => "Successfully synced data"]);

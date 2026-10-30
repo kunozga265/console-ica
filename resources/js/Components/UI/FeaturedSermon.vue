@@ -37,7 +37,7 @@ defineProps({
 
         <div class="hidden md:block fsermon-excerpt border-t pt-4" v-html="bodyHtml(sermon.body)"></div>
 
-        <div class="flex">
+        <div class="flex fsermon-actions">
             <Link :href="route('ui.sermons.show', sermon.slug)" class="btn btn-light">
                 Read More <Icon name="chevright" />
             </Link>

@@ -25,6 +25,7 @@ class AdminCounts
             'events'    => Event::where('end_date', '>=', $now)->count(),
             'prayer'    => Prayer::count(),
             'cells'     => Cell::where('verified', false)->count(), // awaiting verification
+            'visitorsDue' => Visitors::dueCount(), // never followed up, or check-up date reached
         ];
     }
 }

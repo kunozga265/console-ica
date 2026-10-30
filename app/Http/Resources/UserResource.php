@@ -24,7 +24,10 @@ class UserResource extends JsonResource
             'email' => $this->email,
             'role' => $this->roles()->first(),
             'cell_code' => $this->member?->leadershipCell?->code,
-            'member_cell_code' => $this->member?->cell?->code
+            'member_cell_code' => $this->member?->cell?->code,
+            // Added for API 1.4 clients; older apps ignore them.
+            'member_code' => $this->member?->code,
+            'scopes' => $this->resource->scopes(),
         ];
     }
 }

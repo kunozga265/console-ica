@@ -8,6 +8,7 @@ use App\Models\Cell;
 use App\Models\Member;
 use App\Models\Register;
 use App\Support\RegisterAttendance;
+use App\Support\Age;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -101,18 +102,22 @@ class MemberController extends Controller
             'lastName'                 => ['required', 'string', 'max:191'],
             'gender'                   => ['required', Rule::in(['Male', 'Female'])],
             'email'                    => ['nullable', 'email', 'max:191'],
-            'phoneNumberAirtel'        => [$registered ? 'required_without_all:phoneNumberTnm,phoneNumberInternational,email' : 'nullable', 'nullable', 'string', 'max:20'],
+            // Full members need a way to reach them — except children and teenagers (18 or under),
+            // who may have a guardian contact instead.
+            'phoneNumberAirtel'        => [$registered && ! Age::isMinor(request('dateOfBirth')) ? 'required_without_all:phoneNumberTnm,phoneNumberInternational,email' : 'nullable', 'nullable', 'string', 'max:20'],
             'phoneNumberTnm'           => ['nullable', 'string', 'max:20'],
             'phoneNumberInternational' => ['nullable', 'string', 'max:20'],
             'dateOfBirth'              => ['nullable', 'date_format:Y-m-d', 'before:today'],
             'cellId'                   => ['nullable', 'integer', 'exists:cells,id'],
+            'guardianName'             => ['nullable', 'string', 'max:191'],
+            'guardianPhone'            => ['nullable', 'string', 'max:32'],
         ];
     }
 
     private function messages(): array
     {
         return [
-            'phoneNumberAirtel.required_without_all' => 'Full members need at least one phone number or an email address.',
+            'phoneNumberAirtel.required_without_all' => 'Full members need at least one phone number or an email address (not needed for anyone 18 or under).',
             'dateOfBirth.before'                     => 'Date of birth must be in the past.',
         ];
     }
@@ -134,6 +139,8 @@ class MemberController extends Controller
                 ? Carbon::createFromFormat('Y-m-d', $v['dateOfBirth'], config('app.timezone'))->startOfDay()->getTimestamp()
                 : null,
             'cell_id'                    => $v['cellId'] ?? null,
+            'guardian_name'              => ($v['guardianName'] ?? null) ?: null,
+            'guardian_phone'             => $phone('guardianPhone'),
         ];
     }
 

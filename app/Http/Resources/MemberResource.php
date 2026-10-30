@@ -32,6 +32,10 @@ class MemberResource extends JsonResource
             "phone_number_airtel" => $this->phone_number_airtel,
             "phone_number_tnm" => $this->phone_number_tnm,
             "phone_number_international" => $this->phone_number_international,
+            // Visitors are member profiles that aren't registered yet (API 1.4 clients show a badge).
+            "is_registered" => (bool) ($this->is_registered ?? true),
+            "guardian_name" => $this->guardian_name,
+            "guardian_phone" => $this->guardian_phone,
         ];
     }
 }

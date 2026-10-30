@@ -372,7 +372,7 @@ class CellController extends Controller
     {
         return intval($user->member?->leader_cell_id) === $cell->id
             || intval($cell->user_id) === $user->id
-            || $user->hasAnyRole(['admin', 'super']);
+            || $user->hasScope('cells');
     }
 
     private function canView(User $user, Cell $cell): bool

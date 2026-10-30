@@ -1299,3 +1299,7 @@
 .ica-ui .fill-compare > div { display:flex; flex-direction:column; gap:4px; padding:12px; border-radius:var(--radius-sm); background:var(--surface-2); }
 .ica-ui .fill-compare-mine { color:#b7791f; font-size:16px; }
 .ica-ui .fill-compare-actual { color:var(--success, #2f9d9d); font-size:16px; }
+
+/* Home page sermon excerpt: fill-in-the-blank gaps; space above "Read more" on phones (no excerpt there). */
+.ica-ui .fsermon-excerpt .fill-gap { display:inline-block; min-width:4ch; border-bottom:2px solid var(--ink-soft); line-height:1.1; }
+@media (max-width: 767px) { .ica-ui .fsermon-actions { margin-top:18px; } }

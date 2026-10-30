@@ -18,7 +18,7 @@ class EventController extends Controller
         $now = now()->getTimestamp();
         $userId = $request->user()?->id;
         // Response counts are for admins only (the future admin dashboard).
-        $isAdmin = (bool) $request->user()?->hasAnyRole(['admin', 'super']);
+        $isAdmin = (bool) $request->user()?->hasScope('events');
 
         $events = Event::with('ministry')
             ->when($isAdmin, fn ($q) => $q->withCount([
