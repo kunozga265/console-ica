@@ -414,6 +414,10 @@ Route::group(["prefix"=>"1.4"],function (){
     Route::get('/prayers/{prayer}/praying', [API\V1_4\PrayerController::class, 'praying']);
     Route::post('/prayers/{prayer}/praying', [API\V1_4\PrayerController::class, 'togglePraying'])->middleware('auth:sanctum');
 
+    /* "I'm attending" an event (GET works signed out: no answer). */
+    Route::get('/events/{event}/response', [API\V1_4\EventResponseController::class, 'show'])->whereNumber('event');
+    Route::post('/events/{event}/response', [API\V1_4\EventResponseController::class, 'store'])->whereNumber('event')->middleware('auth:sanctum');
+
 //    Route::post('/notification',[\App\Http\Controllers\Web\NotificationController::class, 'pushNotification']);
 
 

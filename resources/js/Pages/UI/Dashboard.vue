@@ -14,7 +14,7 @@ const props = defineProps({
     prayerPoints: { type: Array, default: () => SAMPLE.PRAYER_POINTS },
     events: { type: Array, default: () => SAMPLE.EVENTS },
     announcements: { type: Object, default: null }, // { body } rich text when the console's announcements page is active
-    birthdays: { type: Array, default: () => SAMPLE.BIRTHDAYS },
+    birthdays: { type: Array, default: () => [] }, // signed-in users only
 });
 
 const latest = computed(() => props.sermons[0] ?? null);
@@ -125,7 +125,7 @@ setGreeting();
         </div>
 
         <!-- Announcements + birthdays -->
-        <div v-if="birthdays.length" class="panel mb-24">
+        <div v-if="user && birthdays.length" class="panel mb-24">
             <section id="announcements" class="section">
                 <div class="section-head">
                     <h2>Birthdays this week</h2>

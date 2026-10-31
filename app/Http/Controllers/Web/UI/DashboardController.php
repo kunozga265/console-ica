@@ -59,7 +59,8 @@ class DashboardController extends Controller
             'prayerPoints'  => PrayerResource::collection($prayerPoints)->resolve(),
             'events'        => EventResource::collection($events)->resolve(),
             'announcements' => $this->announcements(),
-            'birthdays'     => $this->birthdaysThisWeek(),
+            // Members' birthdays are only shown to signed-in users.
+            'birthdays'     => $request->user() ? $this->birthdaysThisWeek() : [],
         ]);
     }
 
