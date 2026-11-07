@@ -23,7 +23,7 @@ class AppController extends Controller
 
         //get prayer points
         $now=Carbon::now()->getTimestamp();
-        $prayer=Prayer::where('date','<=',$now)->orderBy('date','desc')->first();
+        $prayer=Prayer::where('date', '<', \App\Support\ChurchTime::tomorrowTs())->orderBy('date','desc')->first();
 
         return response()->json([
             'sermons'   => Resources\SermonResource::collection($sermons),

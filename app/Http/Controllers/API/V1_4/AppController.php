@@ -20,7 +20,7 @@ class AppController extends V1_3AppController
 
         $data = $response->getData(true);
         $user = (new WebAppController())->getAuthUser($request);
-        $data['birthdays'] = $user ? Birthdays::thisWeek() : [];
+        $data['birthdays'] = $user ? Birthdays::thisWeek($user->id) : [];
         // Always send the signed-in user, so scopes granted before an app update
         // reach the app without waiting for the account to change again.
         if ($user) {

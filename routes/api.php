@@ -332,7 +332,7 @@ Route::group(["prefix"=>"1.4"],function (){
         Route::get('/authors/{slug}', [API\V1_2\SermonController::class, 'getSermonsByAuthor']);
     });
 
-    Route::post('/users/login', [API\V1_3\UserController::class, 'login']);
+    Route::post('/users/login', [API\V1_4\UserController::class, 'login']);
     Route::post('/users/confirm', [API\V1_3\UserController::class, 'confirm']);
 
     Route::group(["prefix"=>"cells", "middleware"=>"auth:sanctum"], function (){
@@ -393,7 +393,25 @@ Route::group(["prefix"=>"1.4"],function (){
 
     /* Downloads (ICA Resources): signed-in users only from 1.4 */
     Route::group(["prefix"=>"downloads", "middleware"=>"auth:sanctum"],function (){
-        Route::get('/',[API\V1_1\DownloadController::class, 'index']);
+        Route::get('/',[API\V1_4\DownloadController::class, 'index']); // ?search=, ?recent=14
+    });
+
+    /* v1.4.2: notification settings + inbox, birthday wishes, homecell card, tithe receipts */
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/notification-settings', [API\V1_4\NotificationController::class, 'settings']);
+        Route::put('/notification-settings', [API\V1_4\NotificationController::class, 'updateSettings']);
+        Route::get('/notifications', [API\V1_4\NotificationController::class, 'index']);
+        Route::post('/notifications/read', [API\V1_4\NotificationController::class, 'read']);
+
+        Route::get('/birthdays', [API\V1_4\BirthdayController::class, 'index']);
+        Route::post('/birthdays/{member}/wish', [API\V1_4\BirthdayController::class, 'wish'])->whereNumber('member');
+
+        Route::get('/my-cell', [API\V1_4\MyCellController::class, 'show']);
+
+        Route::get('/tithe-receipts', [API\V1_4\FinanceController::class, 'receipts']);
+        Route::get('/tithe-receipts/{receipt}/pdf', [API\V1_4\FinanceController::class, 'pdf'])->whereNumber('receipt');
+        Route::get('/payment-proofs', [API\V1_4\FinanceController::class, 'proofs']);
+        Route::post('/payment-proofs', [API\V1_4\FinanceController::class, 'storeProof']);
     });
 
 

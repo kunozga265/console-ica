@@ -4,13 +4,13 @@ import Icon from '@/Components/UI/Icon.vue';
 
 /* "Showing x–y of n" + numbered pages; keeps the current query string. */
 const props = defineProps({
-    paging: { type: Object, required: true }, // { page, lastPage, total, from?, to? }
+    paging: { type: Object, required: true }, // { page, lastPage, total, from?, to?, pageName? }
     noun: { type: String, default: 'items' },
 });
 
 const go = (page) => {
     const url = new URL(window.location.href);
-    url.searchParams.set('page', page);
+    url.searchParams.set(props.paging.pageName ?? 'page', page);
     router.get(url.pathname + url.search, {}, { preserveState: true, preserveScroll: false });
 };
 const pages = () => {

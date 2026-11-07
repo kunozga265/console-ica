@@ -47,7 +47,7 @@ class AppController extends Controller
         //        $now=Carbon::now()->getTimestamp(collection);
         if ($timestamp == 0) {
             $now = Carbon::now()->getTimestamp();
-            $prayers = Prayer::where('date', '<=', $now)->orderBy('date', 'desc')->limit((new \App\Http\Controllers\API\V1_1\AppController())->paginate)->get();
+            $prayers = Prayer::where('date', '<', \App\Support\ChurchTime::tomorrowTs())->orderBy('date', 'desc')->limit((new \App\Http\Controllers\API\V1_1\AppController())->paginate)->get();
             $sermons = Sermon::orderBy("published_at", "desc")->limit((new AppController())->paginate)->get();
             $series = Series::where("first_sermon_date", "!=", null)->orderBy("first_sermon_date", "desc")->limit((new AppController())->paginate)->get();
             $events = Event::orderBy("start_date", "desc")->limit((new AppController())->paginate)->get();

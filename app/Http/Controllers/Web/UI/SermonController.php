@@ -38,7 +38,7 @@ class SermonController extends Controller
 
         $query = $this->published(Sermon::query())
             ->select(self::LIST_COLUMNS)
-            ->with(['author', 'series'])
+            ->with(['author', 'series', 'ministry'])
             ->when($filters['search'] ?? null, fn (Builder $q, $search) => $q->where(
                 fn (Builder $q) => $q->where('title', 'like', "%{$search}%")->orWhere('subtitle', 'like', "%{$search}%")
             ))
@@ -96,7 +96,7 @@ class SermonController extends Controller
         $data = (new SermonResource($sermon))->resolve();
         unset($data['body']); // the reader renders renderedBody instead
 
-        $list = fn () => $this->published(Sermon::query())->select(self::LIST_COLUMNS)->with(['author', 'series']);
+        $list = fn () => $this->published(Sermon::query())->select(self::LIST_COLUMNS)->with(['author', 'series', 'ministry']);
 
         // Chronological neighbours across all published sermons (ties broken by id).
         $previous = $list()

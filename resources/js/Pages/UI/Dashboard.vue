@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { Link, usePage } from '@inertiajs/vue3';
+import { Link, router, usePage } from '@inertiajs/vue3';
 import UILayout from '@/Layouts/UILayout.vue';
 import Icon from '@/Components/UI/Icon.vue';
 import Avatar from '@/Components/UI/Avatar.vue';
@@ -18,6 +18,13 @@ const props = defineProps({
 });
 
 const latest = computed(() => props.sermons[0] ?? null);
+
+// "Wish them a happy birthday": a notification to their app and web inbox.
+const wishing = ref(null);
+const wish = (b) => {
+    wishing.value = b.id;
+    router.post(route('ui.birthdays.wish', b.id), {}, { preserveScroll: true, only: ['birthdays', 'flash'], onFinish: () => (wishing.value = null) });
+};
 const others = computed(() => props.sermons.slice(1));
 const inertia = usePage();
 const user = computed(() => inertia.props.auth?.user ?? null);
@@ -152,7 +159,10 @@ setGreeting();
                                 <div class="t">{{ b.name }}</div>
                                 <!-- <div v-if="b.cell" class="s">{{ b.cell }}</div> -->
                             </div>
-                            <span class="badge badge-gold">🎂 {{ fmtDate(b.date) }}</span>
+                            <span class="badge badge-gold">🎂 {{ fmtDate(new Date(`${b.day}T00:00:00`)) }}</span>
+                            <button v-if="b.canWish" class="btn btn-sm" :class="b.wished ? 'btn-soft' : 'btn-ghost'" :disabled="b.wished || wishing === b.id" @click="wish(b)">
+                                {{ b.wished ? 'Wished ✓' : 'Wish 🎉' }}
+                            </button>
                         </div>
                     </div>
                 </div>

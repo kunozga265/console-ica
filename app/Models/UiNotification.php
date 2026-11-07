@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class UiNotification extends Model
 {
-    protected $fillable = ['user_id', 'title', 'body', 'url', 'read_at'];
+    protected $fillable = ['user_id', 'title', 'body', 'url', 'read_at', 'type', 'ref'];
 
     protected $casts = ['read_at' => 'datetime'];
 

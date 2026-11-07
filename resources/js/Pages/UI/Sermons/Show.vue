@@ -30,6 +30,53 @@ const props = defineProps({
 const s = computed(() => props.sermon);
 const crumbs = computed(() => [{ label: 'Sermons', href: route('ui.sermons.index') }, { label: s.value.title }]);
 
+/*
+ * ---- Full-screen reading ----
+ * The reader covers the window (and the browser goes full screen where it
+ * can), with a toolbar pinned to the top. The page itself stays mounted, so
+ * the sentence popup and fill-in dialogs keep working.
+ */
+const fullscreen = ref(false);
+const FS_SIZES = [16, 18, 20, 23, 26, 30];
+const fsSize = ref(18);
+try {
+    const saved = Number(localStorage.getItem('ica-reader-size'));
+    if (FS_SIZES.includes(saved)) fsSize.value = saved;
+} catch {}
+const resize = (step) => {
+    const i = Math.min(FS_SIZES.length - 1, Math.max(0, FS_SIZES.indexOf(fsSize.value) + step));
+    fsSize.value = FS_SIZES[i];
+    try {
+        localStorage.setItem('ica-reader-size', String(fsSize.value));
+    } catch {}
+};
+const enterFullscreen = () => {
+    fullscreen.value = true;
+    document.documentElement.style.overflow = 'hidden';
+    document.documentElement.requestFullscreen?.().catch(() => {}); // not on iPhone Safari: the overlay still fills the screen
+};
+const exitFullscreen = () => {
+    fullscreen.value = false;
+    document.documentElement.style.overflow = '';
+    if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+};
+// Esc in native full screen leaves it; leave reading mode with it.
+const onFsChange = () => {
+    if (!document.fullscreenElement && fullscreen.value) exitFullscreen();
+};
+const onFsKey = (e) => {
+    if (e.key === 'Escape' && fullscreen.value && !active.value) exitFullscreen();
+};
+onMounted(() => {
+    document.addEventListener('fullscreenchange', onFsChange);
+    window.addEventListener('keydown', onFsKey);
+});
+onBeforeUnmount(() => {
+    document.removeEventListener('fullscreenchange', onFsChange);
+    window.removeEventListener('keydown', onFsKey);
+    document.documentElement.style.overflow = '';
+});
+
 /* ---- Video: embed YouTube, otherwise link out ---- */
 const youtubeId = computed(() => {
     const m = (s.value.videoUrl || '').match(/(?:youtu\.be\/|v=|\/embed\/|\/live\/|\/shorts\/)([\w-]{11})/);
@@ -276,7 +323,18 @@ const saveNote = () => {
 <template>
     <UILayout :show-title="false" :title="s.title" page="sermons" :breadcrumbs="crumbs">
         <div class="panel mb-24">
-            <div class="reader">
+            <div class="reader" :class="{ 'reader-fs': fullscreen }">
+                <div v-if="fullscreen" class="fs-bar">
+                    <button class="btn btn-ghost btn-sm btn-icon" aria-label="Exit full screen" @click="exitFullscreen"><Icon name="close" /></button>
+                    <div class="fs-title">{{ s.title }}</div>
+                    <div class="fs-tools">
+                        <button class="btn btn-ghost btn-sm" aria-label="Smaller text" :disabled="fsSize === FS_SIZES[0]" @click="resize(-1)"><span style="font-size: 12px">A</span>−</button>
+                        <button class="btn btn-ghost btn-sm" aria-label="Larger text" :disabled="fsSize === FS_SIZES[FS_SIZES.length - 1]" @click="resize(1)"><span style="font-size: 16px">A</span>+</button>
+                        <BookmarkButton :sermon-id="s.id" kind="favorite" />
+                        <BookmarkButton :sermon-id="s.id" />
+                        <ShareButton :title="s.title" :url="route('ui.sermons.show', s.slug)" />
+                    </div>
+                </div>
                 <div class="kicker hidden md:flex">
                     <Link class="badge badge-outline" :href="route('ui.sermons.index')">
                         <span style="display: inline-flex; transform: rotate(180deg)">
@@ -290,7 +348,8 @@ const saveNote = () => {
                         :href="route('ui.sermons.index', { series: s.series.slug }) + '#all'">{{ s.series.title }}</Link>
                     <span class="tiny muted">{{ fmtDate(s.publishedAt) }}</span>
                 </div>
-                <div class="block md:hidden"> <span class="tiny muted">{{ fmtDate(s.publishedAt) }}</span></div>
+                <!-- Phones: the app's gradient date chip. -->
+                <div class="block md:hidden"><span class="date-chip">{{ fmtDate(s.publishedAt) }}</span></div>
                 <h1 class="sermon-title">{{ s.title }}</h1>
                 <p v-if="s.subtitle" class="muted mt-8" style="font-size: 15px">{{ s.subtitle }}</p>
                 <div class="block md:hidden">
@@ -310,6 +369,7 @@ const saveNote = () => {
                         <BookmarkButton :sermon-id="s.id" kind="favorite" />
                         <BookmarkButton :sermon-id="s.id" />
                         <ShareButton :title="s.title" :url="route('ui.sermons.show', s.slug)" />
+                        <button v-if="!fullscreen" class="btn btn-ghost btn-sm btn-icon" aria-label="Read full screen" title="Read full screen" @click="enterFullscreen"><Icon name="expand" /></button>
                     </div>
                 </div>
 
@@ -322,7 +382,7 @@ const saveNote = () => {
                     <Icon name="play" /> Watch the message
                 </a>
 
-                <div ref="bodyEl" class="reader-body" @click="onBodyClick" @keydown="onBodyKey" v-html="renderedBody"></div>
+                <div ref="bodyEl" class="reader-body" :style="fullscreen ? { fontSize: `${fsSize}px` } : null" @click="onBodyClick" @keydown="onBodyKey" v-html="renderedBody"></div>
                 <p class="tiny muted mt-16 flex" style="gap: 6px">
                     <Icon name="highlighter" /> Tip: tap any sentence to highlight, bookmark or copy it.
                 </p>

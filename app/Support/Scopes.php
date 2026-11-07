@@ -18,6 +18,7 @@ class Scopes
         'cells'         => ['label' => 'Cells', 'hint' => 'Cells, zones and cell verification'],
         'registers'     => ['label' => 'Registers', 'hint' => 'Service registers, attendance and adding visitors'],
         'members'       => ['label' => 'Members', 'hint' => 'Member directory, visitors and follow-ups'],
+        'finance'       => ['label' => 'Finance', 'hint' => 'Tithe receipts and proofs of payment (accountants)'],
     ];
 
     public static function keys(): array

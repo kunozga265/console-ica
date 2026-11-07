@@ -44,6 +44,13 @@ return [
 
     // App Links / Universal Links: https://www.ica-app.com/check-in/{code} and
     // /sermons/{slug} open in the mobile app when it's installed.
+    // Push notifications (FCM HTTP v1). FIREBASE_CREDENTIALS is the path to the
+    // service-account JSON on the server — never commit it.
+    'firebase' => [
+        'project_id'  => env('FIREBASE_PROJECT_ID', 'ica-app-4de51'),
+        'credentials' => env('FIREBASE_CREDENTIALS'),
+    ],
+
     'app_links' => [
         'paths' => ['/check-in/*', '/sermons/*'],
         'ios_app_ids' => array_filter(explode(',', env('IOS_APP_LINK_APP_IDS', '4BR249SGCL.com.icamalawi.icaapp'))),

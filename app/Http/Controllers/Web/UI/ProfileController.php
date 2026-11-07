@@ -8,12 +8,16 @@ use App\Http\Resources\UI\SermonResource;
 use App\Models\Attendance;
 use App\Models\Bookmark;
 use App\Models\Note;
+use App\Models\PaymentProof;
+use App\Models\TitheReceipt;
+use App\Support\NotificationSettings;
+use App\Support\Receipts;
 use App\Models\Sermon;
 use App\Models\SermonSave;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
-/** The signed-in user's own page: notes, saved things and attendance history. */
+/** The signed-in user's own page: notes, saved things, attendance, tithe receipts and notification settings. */
 class ProfileController extends Controller
 {
     private const SERMON_COLUMNS = ['id', 'slug', 'title', 'subtitle', 'video_url', 'author_id', 'series_id', 'ministry_id', 'published_at', 'created_at'];
@@ -66,6 +70,10 @@ class ProfileController extends Controller
                 'date'        => intval($b->date) * 1000,
             ])->values(),
             'attendance' => $member ? $this->attendance($member->id) : null,
+            // Tithe receipts issued to this member, and the proofs of payment they sent.
+            'receipts'   => $member ? TitheReceipt::with(['member', 'issuer'])->where('member_id', $member->id)->orderByDesc('received_on')->orderByDesc('id')->get()->map(fn ($r) => Receipts::receiptRow($r))->values() : [],
+            'proofs'     => $member ? PaymentProof::with(['member', 'receipt'])->where('member_id', $member->id)->latest()->limit(50)->get()->map(fn ($p) => Receipts::proofRow($p))->values() : [],
+            'notificationSettings' => NotificationSettings::forUser($user),
         ]);
     }
 

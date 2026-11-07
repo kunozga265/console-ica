@@ -75,6 +75,10 @@ Route::name('ui.')->group(function () use ($auth) {
         Route::post('/events/{event}/response', [UIEngagementController::class, 'respondToEvent'])->name('events.respond');
         Route::post('/prayer/{prayer}/praying', [UIEngagementController::class, 'togglePraying'])->name('prayer.praying');
         Route::post('/notifications/read', [UIEngagementController::class, 'readNotifications'])->name('notifications.read');
+        Route::put('/profile/notifications', [UIEngagementController::class, 'updateNotificationSettings'])->name('notifications.settings');
+        Route::post('/birthdays/{member}/wish', [UIEngagementController::class, 'wishBirthday'])->whereNumber('member')->name('birthdays.wish');
+        Route::get('/tithe-receipts/{receipt}/pdf', [\App\Http\Controllers\Web\UI\MemberFinanceController::class, 'pdf'])->name('receipts.pdf');
+        Route::post('/payment-proofs', [\App\Http\Controllers\Web\UI\MemberFinanceController::class, 'storeProof'])->name('proofs.store');
 
         // Cells: the member's cell dashboard, finding/joining a cell, and
         // management actions (authorised per cell in the controller).
@@ -234,6 +238,20 @@ Route::middleware([...$auth, 'scope:any'])->prefix('admin')->name('admin.')->gro
     Route::middleware('scope:announcements')->group(function () {
         Route::get('/announcements', [Admin\AnnouncementController::class, 'edit'])->name('announcements.edit');
         Route::put('/announcements', [Admin\AnnouncementController::class, 'update'])->name('announcements.update');
+        // Push notifications to the app (general communication).
+        Route::get('/notifications', [Admin\BroadcastController::class, 'create'])->name('broadcasts.create');
+        Route::post('/notifications', [Admin\BroadcastController::class, 'store'])->name('broadcasts.store');
+    });
+
+    // Finance: tithe receipts and proofs of payment (accountants).
+    Route::middleware('scope:finance')->group(function () {
+        Route::get('/finance', [Admin\FinanceController::class, 'index'])->name('finance.index');
+        Route::get('/finance/members', [Admin\FinanceController::class, 'members'])->name('finance.members');
+        Route::post('/finance/receipts', [Admin\FinanceController::class, 'store'])->name('finance.receipts.store');
+        Route::get('/finance/receipts/{receipt}/pdf', [Admin\FinanceController::class, 'pdf'])->name('finance.receipts.pdf');
+        Route::post('/finance/receipts/{receipt}/resend', [Admin\FinanceController::class, 'resend'])->name('finance.receipts.resend');
+        Route::post('/finance/proofs/{proof}/acknowledge', [Admin\FinanceController::class, 'acknowledge'])->name('finance.proofs.acknowledge');
+        Route::get('/finance/proofs/{proof}/file', [Admin\FinanceController::class, 'proofFile'])->name('finance.proofs.file');
     });
 
     // Users & scopes: super users only.

@@ -19,7 +19,7 @@ class AboutController extends Controller
         return Inertia::render('UI/About', [
             'stats' => [
                 'sermons'      => Sermon::where('published_at', '<=', now()->getTimestamp())->count(),
-                'prayerPoints' => Prayer::where('date', '<=', now()->getTimestamp())->count(),
+                'prayerPoints' => Prayer::where('date', '<', \App\Support\ChurchTime::tomorrowTs())->count(),
                 'cells'        => Cell::where('verified', true)->count(),
             ],
             'pastors' => AuthorResource::collection(

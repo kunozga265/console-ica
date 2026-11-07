@@ -28,8 +28,8 @@ class DashboardController extends Controller
         $now = Carbon::now()->getTimestamp();
 
         // Only the featured (latest) sermon shows its body, so the rest leave it out.
-        $sermons = Sermon::with(['author', 'series'])
-            ->select(['id', 'slug', 'title', 'subtitle', 'video_url', 'author_id', 'series_id', 'published_at', 'created_at'])
+        $sermons = Sermon::with(['author', 'series', 'ministry'])
+            ->select(['id', 'slug', 'title', 'subtitle', 'video_url', 'author_id', 'series_id', 'ministry_id', 'published_at', 'created_at'])
             ->where('published_at', '<=', $now)
             ->orderByRaw('published_at DESC, created_at DESC')
             ->limit(self::LIMIT)
@@ -41,7 +41,7 @@ class DashboardController extends Controller
         }
 
         // Most recent first, up to and including today's.
-        $prayerPoints = Prayer::where('date', '<', Carbon::tomorrow()->getTimestamp())
+        $prayerPoints = Prayer::where('date', '<', \App\Support\ChurchTime::tomorrowTs())
             ->orderByRaw('date DESC, created_at DESC')
             ->limit(self::LIMIT)
             ->get();
@@ -60,7 +60,7 @@ class DashboardController extends Controller
             'events'        => EventResource::collection($events)->resolve(),
             'announcements' => $this->announcements(),
             // Members' birthdays are only shown to signed-in users.
-            'birthdays'     => $request->user() ? $this->birthdaysThisWeek() : [],
+            'birthdays'     => $request->user() ? $this->birthdaysThisWeek($request->user()->id) : [],
         ]);
     }
 
@@ -85,9 +85,9 @@ class DashboardController extends Controller
      * app timezone instead of MySQL's session timezone (dates of birth are
      * stored as local midnight, which is the previous day in UTC).
      */
-    private function birthdaysThisWeek(): array
+    private function birthdaysThisWeek(int $viewerId): array
     {
         // Shared with the app (API 1.4 dashboard); the web uses milliseconds.
-        return array_map(fn ($b) => ['date' => $b['date'] * 1000] + $b, Birthdays::thisWeek());
+        return array_map(fn ($b) => ['date' => $b['date'] * 1000] + $b, Birthdays::thisWeek($viewerId));
     }
 }

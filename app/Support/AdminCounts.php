@@ -26,6 +26,7 @@ class AdminCounts
             'prayer'    => Prayer::count(),
             'cells'     => Cell::where('verified', false)->count(), // awaiting verification
             'visitorsDue' => Visitors::dueCount(), // never followed up, or check-up date reached
+            'proofsWaiting' => \App\Models\PaymentProof::whereIn('status', ['pending', 'acknowledged'])->count(),
         ];
     }
 }

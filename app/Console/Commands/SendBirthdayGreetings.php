@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Mail\BirthdayGreeting;
 use App\Models\Member;
+use App\Support\Notify;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -11,7 +12,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 /**
- * Emails a birthday greeting to every member whose birthday is today
+ * Emails (and, for members with an account, pushes) a birthday greeting to
+ * every member whose birthday is today
  * (church timezone). Scheduled daily at 07:00 in routes/console.php.
  * Each member is greeted at most once a year, so re-runs are safe.
  */
@@ -57,19 +59,27 @@ class SendBirthdayGreetings extends Command
                 ->first(fn ($e) => $e && filter_var($e, FILTER_VALIDATE_EMAIL));
             $name = trim("{$member->first_name} {$member->last_name}");
 
-            if (! $email) {
-                $skipped++;
-                $this->line("  – {$name}: no email address");
-                continue;
-            }
-
             if ($this->option('dry-run')) {
-                $this->line("  · {$name} <{$email}>");
+                $this->line("  · {$name} <".($email ?: 'no email').'>'.($member->user ? ' + app' : ''));
                 $sent++;
                 continue;
             }
 
             try {
+                // App + web inbox greeting for members with an account.
+                if ($member->user) {
+                    $first = trim($member->first_name) ?: 'friend';
+                    Notify::users([$member->user->id], "Happy birthday, {$first}! 🎂", 'Wishing you a blessed year ahead from all of us at ICA.', 'birthday', (string) $member->id);
+                }
+
+                if (! $email) {
+                    // Still recorded, so the app greeting isn't repeated on re-runs.
+                    DB::table('birthday_greetings')->insertOrIgnore(['member_id' => $member->id, 'year' => $today->year, 'email' => '', 'sent_at' => now()]);
+                    $skipped++;
+                    $this->line("  – {$name}: no email address".($member->user ? ' (app greeting sent)' : ''));
+                    continue;
+                }
+
                 Mail::to($email)->send(new BirthdayGreeting(trim($member->first_name) ?: 'friend'));
                 DB::table('birthday_greetings')->insertOrIgnore([
                     'member_id' => $member->id,

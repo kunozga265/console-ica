@@ -5,7 +5,7 @@ import Avatar from '@/Components/UI/Avatar.vue';
 import { authorName, fmtDateComma } from '@/Components/UI/helpers';
 
 /* Compact sermon card, after the console Home page's "Latest Sermons" sermon-card:
-   location + date, bold one-line title, author. */
+   ministry + date, bold one-line title, author. */
 const props = defineProps({
     sermon: { type: Object, required: true },
 });
@@ -16,7 +16,7 @@ const open = () => router.visit(route('ui.sermons.show', props.sermon.slug));
 <template>
     <article class="mcard" @click="open">
         <div class="mcard-meta">
-            <span class="where"><Icon name="folder" /> Main Church</span>
+            <span v-if="sermon.ministry" class="where"><Icon name="folder" /> {{ sermon.ministry.name }}</span>
             <span class="date">{{ fmtDateComma(sermon.publishedAt) }}</span>
         </div>
         <div class="mcard-title" :title="sermon.title">{{ sermon.title }}</div>

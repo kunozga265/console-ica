@@ -52,6 +52,26 @@ class EngagementController extends Controller
         return back();
     }
 
+    public function wishBirthday(Request $request, int $member)
+    {
+        \App\Support\BirthdayWishes::send($request->user(), \App\Models\Member::findOrFail($member));
+
+        return back()->with('success', 'Birthday wish sent 🎉');
+    }
+
+    public function updateNotificationSettings(Request $request)
+    {
+        $data = $request->validate([
+            'categories'   => ['sometimes', 'array'],
+            'categories.*' => ['boolean'],
+            'ministries'   => ['sometimes', 'array'],
+            'ministries.*' => ['integer', 'exists:ministries,id'],
+        ]);
+        \App\Support\NotificationSettings::update($request->user(), $data);
+
+        return back()->with('success', 'Notification settings saved');
+    }
+
     public function readNotifications(Request $request)
     {
         UiNotification::where('user_id', $request->user()->id)->whereNull('read_at')->update(['read_at' => now()]);

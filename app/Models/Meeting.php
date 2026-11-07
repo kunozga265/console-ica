@@ -9,6 +9,16 @@ class Meeting extends Model
 {
     use HasFactory;
 
+    /** A newly scheduled (today or later) meeting is announced to the cell. */
+    protected static function booted(): void
+    {
+        static::created(function (Meeting $meeting) {
+            if (intval($meeting->date) >= \Carbon\Carbon::today(config('app.timezone'))->getTimestamp()) {
+                \App\Support\CellNotices::meetingScheduled($meeting);
+            }
+        });
+    }
+
     public function attendances()
     {
         return $this->hasMany(Attendance::class);

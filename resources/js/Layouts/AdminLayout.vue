@@ -56,6 +56,8 @@ const NAV = computed(() => [
         items: [
             { id: 'prayer', scope: 'prayer', name: 'Prayer Points', icon: 'pray', route: 'admin.prayer.index', count: fmt(counts.value.prayer) },
             { id: 'announcements', scope: 'announcements', name: 'Announcements', icon: 'bell', route: 'admin.announcements.edit' },
+            { id: 'broadcasts', scope: 'announcements', name: 'Send notification', icon: 'bell', route: 'admin.broadcasts.create' },
+            { id: 'finance', scope: 'finance', name: 'Tithe receipts', icon: 'gift', route: 'admin.finance.index', count: counts.value.proofsWaiting ? `${counts.value.proofsWaiting} to receipt` : null },
             { id: 'giving', scope: 'giving', name: 'Giving Options', icon: 'gift', route: 'admin.giving.index' },
             { id: 'devotions', scope: 'sermons', name: 'Devotionals', icon: 'book', soon: true },
             { id: 'favorites', scope: 'sermons', name: 'Favorites', icon: 'heart', route: 'admin.favorites' },
