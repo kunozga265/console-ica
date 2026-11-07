@@ -1322,3 +1322,11 @@
 
 /* Phones: sermon date chip like the app's (cyan → yellow gradient). */
 .ica-ui .date-chip { display:inline-block; padding:6px 14px; border-radius:14px; background:linear-gradient(90deg, #00d3ff, #ffff00); color:#1c1c1c; font-size:11px; font-weight:700; margin-bottom:10px; }
+
+/* Rich text editor: full-screen dialog (toolbar stays at the top while the text scrolls). */
+.ica-ui .re-spacer { flex:1; }
+.ica-ui .re-fs-backdrop { position:fixed; inset:0; z-index:120; display:grid; place-items:center; padding:16px; background:rgba(15,25,40,.5); backdrop-filter:blur(2px); }
+.ica-ui .rich-editor.re-fs { width:min(1040px, 100%); height:calc(100vh - 32px); height:calc(100dvh - 32px); display:flex; flex-direction:column; box-shadow:0 24px 60px rgba(0,0,0,.3); border-radius:var(--radius, 14px); }
+.ica-ui .rich-editor.re-fs .re-toolbar { position:sticky; top:0; z-index:1; flex:none; }
+.ica-ui .rich-editor.re-fs .re-scroll { flex:1; min-height:0; overflow-y:auto; }
+.ica-ui .rich-editor.re-fs .re-content { min-height:100%; max-width:760px; margin:0 auto; font-size:16px; }

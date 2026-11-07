@@ -662,3 +662,11 @@
 .ica-admin .fu-meta { display:flex; align-items:center; gap:8px; }
 .ica-admin .fu-comment { white-space:pre-line; margin:4px 0 6px; color:var(--ink-soft); }
 @media (max-width: 760px) { .ica-admin .visitor-grid { grid-template-columns:1fr; } }
+
+/* Rich text editor: full-screen dialog (toolbar stays at the top while the text scrolls). */
+.ica-admin .re-spacer { flex:1; }
+.ica-admin .re-fs-backdrop { position:fixed; inset:0; z-index:120; display:grid; place-items:center; padding:16px; background:rgba(15,25,40,.5); backdrop-filter:blur(2px); }
+.ica-admin .rich-editor.re-fs { width:min(1040px, 100%); height:calc(100vh - 32px); height:calc(100dvh - 32px); display:flex; flex-direction:column; box-shadow:0 24px 60px rgba(0,0,0,.3); border-radius:var(--radius, 14px); }
+.ica-admin .rich-editor.re-fs .re-toolbar { position:sticky; top:0; z-index:1; flex:none; }
+.ica-admin .rich-editor.re-fs .re-scroll { flex:1; min-height:0; overflow-y:auto; }
+.ica-admin .rich-editor.re-fs .re-content { min-height:100%; max-width:760px; margin:0 auto; font-size:16px; }

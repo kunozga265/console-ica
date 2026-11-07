@@ -31,6 +31,32 @@ const error = ref('');
 
 const parseOptions = props.preserveWhitespace ? { preserveWhitespace: true } : {};
 
+/*
+ * Full screen: the editor moves into a large dialog over the page (teleported
+ * to the page root so it escapes any modal it sits in), with the toolbar kept
+ * at the top while the text scrolls. Esc or the button returns it.
+ */
+const rootEl = ref(null);
+const fullscreen = ref(false);
+const fsTarget = ref('body');
+const enterFullscreen = () => {
+    fsTarget.value = rootEl.value?.closest('.ica-admin, .ica-ui') ?? 'body';
+    fullscreen.value = true;
+    document.documentElement.style.overflow = 'hidden';
+    nextTick(() => editor.value?.commands.focus());
+};
+const exitFullscreen = () => {
+    fullscreen.value = false;
+    document.documentElement.style.overflow = '';
+    nextTick(() => editor.value?.commands.focus());
+};
+const onFsKey = (e) => {
+    if (e.key === 'Escape' && fullscreen.value && !linking.value) {
+        e.stopPropagation();
+        exitFullscreen();
+    }
+};
+
 const editor = useEditor({
     content: props.modelValue,
     parseOptions,
@@ -70,7 +96,10 @@ watch(() => props.modelValue, (value) => {
     }
 });
 
-onBeforeUnmount(() => editor.value?.destroy());
+onBeforeUnmount(() => {
+    if (fullscreen.value) document.documentElement.style.overflow = '';
+    editor.value?.destroy();
+});
 
 const tools = [
     { label: 'B', title: 'Bold', name: 'bold', run: (c) => c.toggleBold(), style: 'font-weight:700' },
@@ -191,7 +220,10 @@ const onPicked = (e) => {
 </script>
 
 <template>
-    <div class="rich-editor">
+    <div ref="rootEl" class="re-anchor">
+    <Teleport :to="fsTarget" :disabled="!fullscreen">
+    <div :class="{ 're-fs-backdrop': fullscreen }" @mousedown.self="exitFullscreen" @keydown.capture="onFsKey">
+    <div class="rich-editor" :class="{ 're-fs': fullscreen }" :role="fullscreen ? 'dialog' : null" :aria-modal="fullscreen ? 'true' : null">
         <div v-if="editor" class="re-toolbar" role="toolbar" aria-label="Formatting">
             <button
                 v-for="t in tools"
@@ -210,6 +242,10 @@ const onPicked = (e) => {
                 </button>
                 <input ref="fileInput" type="file" accept="image/png,image/jpeg,image/gif,image/webp" multiple hidden @change="onPicked" />
             </template>
+            <span class="re-spacer"></span>
+            <button type="button" :title="fullscreen ? 'Exit full screen (Esc)' : 'Full screen'" :class="{ on: fullscreen }" @click="fullscreen ? exitFullscreen() : enterFullscreen()">
+                {{ fullscreen ? 'Exit full screen' : '⤢ Full screen' }}
+            </button>
         </div>
 
         <form v-if="linking" class="re-linkbar" @submit.prevent="applyLink">
@@ -220,6 +256,9 @@ const onPicked = (e) => {
         </form>
         <p v-if="error" class="re-error">{{ error }}</p>
 
-        <EditorContent :editor="editor" />
+        <EditorContent class="re-scroll" :editor="editor" />
+    </div>
+    </div>
+    </Teleport>
     </div>
 </template>
